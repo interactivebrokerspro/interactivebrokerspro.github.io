@@ -11,8 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // --- STATE MANAGEMENT ---
-    // The base balance is reverse engineered from your original data: $1,055,235.74 - $17,553.98
-    const basePrincipal = 23000; 
+    const basePrincipal = 30981.76; 
     
     let portfolioState = {
         balance: 33435.74,
@@ -20,18 +19,40 @@ document.addEventListener('DOMContentLoaded', () => {
         activeTimeframe: '1M'
     };
 
-    // --- CHART INITIALIZATION (Main Portfolio) ---
+    // --- CHART INITIALIZATION (Main Portfolio - Day Trading Style with MAs) ---
     const ctx = document.getElementById('portfolioChart').getContext('2d');
 
+    // Spiky / volatile datasets fluctuating up and down, ending at the current balance
     const chartDatasets = {
-        '1W':  [1050000, 1052000, 1048000, 1053000, 1055235.74],
-        'MTD': [1040000, 1045000, 1042000, 1050000, 1055235.74],
-        '1M':  [1037500, 1051000, 1045000, 1058000, 1055000, 1068000, 1061000, 1058000, 1048000, 1043000, 1053000, 1050000, 1053000, 1054000, 1058000, 1050000, 1050000, 1046000, 1052000, 1055235.74],
-        '3M':  [1010000, 1025000, 1040000, 1030000, 1055235.74],
-        'YTD': [980000, 1010000, 1035000, 1040000, 1055235.74],
-        '1Y':  [920000, 960000, 1010000, 1025000, 1055235.74],
-        'ALL': [750000, 850000, 920000, 990000, 1055235.74]
+        '1W':  [33200, 32900, 33400, 33100, 33435.74],
+        'MTD': [32000, 33200, 32500, 33500, 33435.74],
+        '1M':  [31200, 32400, 31500, 32800, 31900, 33100, 32300, 33600, 32200, 33000, 32100, 33400, 32500, 33700, 32600, 33200, 32000, 33500, 32800, 33435.74],
+        '3M':  [29500, 31800, 30200, 32600, 31000, 33435.74],
+        'YTD': [27500, 30500, 29000, 32200, 30800, 33435.74],
+        '1Y':  [24000, 29000, 26000, 31500, 28500, 33435.74],
+        'ALL': [19000, 26000, 22000, 30000, 27000, 33435.74]
     };
+
+    // Helper to calculate Simple Moving Average for day trading indicators
+    function calculateSMA(data, period) {
+        let sma = [];
+        for (let i = 0; i < data.length; i++) {
+            if (i < period - 1) {
+                sma.push(null);
+            } else {
+                let sum = 0;
+                for (let j = 0; j < period; j++) {
+                    sum += data[i - j];
+                }
+                sma.push(sum / period);
+            }
+        }
+        return sma;
+    }
+
+    const currentData = chartDatasets['1M'];
+    const fastMA = calculateSMA(currentData, 3);
+    const slowMA = calculateSMA(currentData, 6);
 
     function getGradient(context) {
         const chart = context.chart;
@@ -47,40 +68,87 @@ document.addEventListener('DOMContentLoaded', () => {
     const portfolioChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: chartDatasets['1M'].map((_, i) => i),
-            datasets: [{
-                data: chartDatasets['1M'],
-                borderColor: '#0066cc',
-                borderWidth: 2.5,
-                pointRadius: 0,
-                pointHoverRadius: 5,
-                tension: 0.25,
-                fill: true,
-                backgroundColor: (context) => getGradient(context)
-            }]
+            labels: currentData.map((_, i) => i),
+            datasets: [
+                {
+                    label: 'Price Action',
+                    data: currentData,
+                    borderColor: '#0066cc',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    tension: 0, // Sharp, spiky day-trading lines
+                    fill: true,
+                    backgroundColor: (context) => getGradient(context),
+                    order: 2
+                },
+                {
+                    label: 'EMA 9',
+                    data: fastMA,
+                    borderColor: '#ff9800',
+                    borderWidth: 1.5,
+                    pointRadius: 0,
+                    tension: 0.2,
+                    fill: false,
+                    order: 1
+                },
+                {
+                    label: 'EMA 21',
+                    data: slowMA,
+                    borderColor: '#9c27b0',
+                    borderWidth: 1.5,
+                    pointRadius: 0,
+                    tension: 0.2,
+                    fill: false,
+                    order: 0
+                }
+            ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false, 
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
             plugins: {
-                legend: { display: false },
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        boxWidth: 12,
+                        font: { size: 10, family: 'monospace' },
+                        color: () => document.documentElement.getAttribute('data-theme') === 'dark' ? '#9cb0c9' : '#656f7d'
+                    }
+                },
                 tooltip: {
                     mode: 'index',
                     intersect: false,
+                    backgroundColor: 'rgba(18, 22, 25, 0.9)',
+                    titleFont: { size: 11 },
+                    bodyFont: { size: 12, family: 'monospace' },
+                    borderColor: '#333',
+                    borderWidth: 1,
                     callbacks: {
-                        label: (context) => `$${context.raw.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+                        label: (context) => `${context.dataset.label}: $${context.raw ? context.raw.toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00'}`
                     }
                 }
             },
             scales: {
-                x: { display: false },
+                x: { 
+                    display: true,
+                    grid: { 
+                        color: () => document.documentElement.getAttribute('data-theme') === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)' 
+                    },
+                    ticks: { display: false }
+                },
                 y: {
                     position: 'right',
                     grid: { color: () => document.documentElement.getAttribute('data-theme') === 'dark' ? '#232d3f' : '#f0f3f7' },
                     ticks: {
                         color: () => document.documentElement.getAttribute('data-theme') === 'dark' ? '#64748b' : '#8d97a5',
-                        font: { size: 11 },
-                        callback: (val) => (val / 1000000).toFixed(2) + 'M'
+                        font: { size: 11, family: 'monospace' },
+                        callback: (val) => '$' + val.toLocaleString()
                     }
                 }
             }
@@ -98,15 +166,15 @@ document.addEventListener('DOMContentLoaded', () => {
             datasets: [{
                 type: 'line',
                 label: 'RSI',
-                data: [45, 52, 68, 74, 55, 48, 61],
+                data: [35, 75, 45, 85, 30, 90, 50],
                 borderColor: '#d32f2f',
                 borderWidth: 2,
                 yAxisID: 'y1',
-                tension: 0.3
+                tension: 0
             }, {
                 type: 'bar',
                 label: 'Delta Volume',
-                data: [1200, -800, 2500, 3100, -1500, -500, 1800],
+                data: [1500, -2200, 3100, -1800, 2500, -900, 2100],
                 backgroundColor: (ctx) => ctx.raw > 0 ? 'rgba(15, 157, 88, 0.6)' : 'rgba(211, 47, 47, 0.6)',
                 yAxisID: 'y'
             }]
@@ -126,7 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
             labels: ['Volatility', 'Drawdown', 'Sharpe Ratio', 'Alpha', 'Beta', 'Liquidity'],
             datasets: [{
                 label: 'Current Strategy',
-                data: [80, 40, 90, 75, 60, 85],
+                data: [85, 45, 95, 70, 65, 90],
                 fill: true,
                 backgroundColor: 'rgba(0, 102, 204, 0.2)',
                 borderColor: 'rgba(0, 102, 204, 1)',
@@ -170,8 +238,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const scaleFactor = portfolioState.balance / baseData[baseData.length - 1];
             const scaledData = baseData.map(val => val * scaleFactor);
 
+            const newFastMA = calculateSMA(scaledData, 3);
+            const newSlowMA = calculateSMA(scaledData, 6);
+
             portfolioChart.data.labels = scaledData.map((_, i) => i);
             portfolioChart.data.datasets[0].data = scaledData;
+            portfolioChart.data.datasets[1].data = newFastMA;
+            portfolioChart.data.datasets[2].data = newSlowMA;
             portfolioChart.update();
         });
     });
@@ -195,8 +268,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!isNaN(newBal)) {
             portfolioState.balance = newBal;
-            
-            // Calculates gain mathematically off our base principal
             portfolioState.changeAmount = newBal - basePrincipal; 
             
             updateDisplay();
@@ -204,8 +275,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const activeRange = portfolioState.activeTimeframe;
             const baseData = chartDatasets[activeRange] || chartDatasets['1M'];
             const scaleFactor = newBal / baseData[baseData.length - 1];
+            const scaledData = baseData.map(val => val * scaleFactor);
             
-            portfolioChart.data.datasets[0].data = baseData.map(val => val * scaleFactor);
+            const newFastMA = calculateSMA(scaledData, 3);
+            const newSlowMA = calculateSMA(scaledData, 6);
+
+            portfolioChart.data.datasets[0].data = scaledData;
+            portfolioChart.data.datasets[1].data = newFastMA;
+            portfolioChart.data.datasets[2].data = newSlowMA;
             portfolioChart.update();
         }
         modal.classList.remove('active');
@@ -240,7 +317,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
         document.documentElement.setAttribute('data-theme', newTheme);
         
-        // Save to local storage for persistence
         localStorage.setItem('theme', newTheme);
         
         darkToggle.querySelector('i').className = newTheme === 'dark' ? 'fa-regular fa-sun' : 'fa-regular fa-moon';
