@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Brokers Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="p2r-indicator">
+        <i class="fa-solid fa-arrow-rotate-right fa-spin"></i> Refreshing...
+    </div>
+
+    <div class="app-layout">
+        
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="ib-logo">
+                    <svg class="ib-mark" viewBox="0 0 100 100" width="26" height="26">
+                        <polygon points="10,10 90,10 50,90" fill="#cc0000"/>
+                        <polygon points="10,10 35,50 10,90" fill="#990000"/>
+                    </svg>
+                    <span class="ib-text">Interactive<strong>Brokers</strong></span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="side-link active view-trigger" data-target="view-home"><i class="fa-solid fa-house"></i> Home</a>
+                <a href="#" class="side-link view-trigger" data-target="view-portfolio"><i class="fa-solid fa-chart-pie"></i> Portfolio</a>
+                <a href="#" class="side-link view-trigger" data-target="view-order-history"><i class="fa-solid fa-clock-rotate-left"></i> Order History</a>
+                <a href="#" class="side-link view-trigger" data-target="view-explore"><i class="fa-solid fa-compass"></i> Explore</a>
+                <div class="sidebar-divider"></div>
+                <a href="#" class="side-link desktop-only"><i class="fa-solid fa-bolt"></i> Live Screener</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            
+            <header class="top-header">
+                <div class="mobile-logo-container">
+                    <div class="profile-avatar view-trigger" data-target="view-profile" style="cursor:pointer;"><i class="fa-solid fa-user"></i></div>
+                    <div class="ib-logo mobile-logo">
+                        <svg class="ib-mark" viewBox="0 0 100 100" width="22" height="22">
+                            <polygon points="10,10 90,10 50,90" fill="#cc0000"/>
+                            <polygon points="10,10 35,50 10,90" fill="#990000"/>
+                        </svg>
+                        <span class="ib-text">Interactive<strong>Brokers</strong></span>
+                    </div>
+                </div>
+
+                <div class="desktop-search">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" placeholder="Search symbols, news, or tools...">
+                </div>
+
+                <div class="header-actions">
+                    <button id="dark-mode-toggle" class="icon-btn" title="Toggle Theme"><i class="fa-regular fa-moon"></i></button>
+                    <button class="icon-btn" title="Messages"><i class="fa-regular fa-comment-dots"></i></button>
+                    
+                    <div class="notif-wrapper">
+                        <button id="notif-btn" class="icon-btn" title="Notifications"><i class="fa-regular fa-bell"></i><span class="notif-badge">12</span></button>
+                        <div id="notif-dropdown" class="notif-dropdown hidden" style="max-height: 400px; overflow-y: auto;">
+                            <div class="notif-header">Notifications</div>
+                            <div class="notif-item"><i class="fa-solid fa-shield-halved" style="color:var(--accent-blue)"></i> Logged in from new IP address (Riverside, CA)</div>
+                            <div class="notif-item"><i class="fa-solid fa-check-circle" style="color:var(--green-positive)"></i> FILLED: SELL 300 TSLA @ 215.42</div>
+                            <div class="notif-item"><i class="fa-solid fa-file-invoice" style="color:var(--text-secondary)"></i> Account Statement available for June 2026</div>
+                            <div class="notif-item"><i class="fa-solid fa-arrow-trend-up" style="color:var(--accent-blue)"></i> NVDA up 2.4% in pre-market trading</div>
+                            <div class="notif-item"><i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b"></i> Early assignment risk on MARA 35C</div>
+                            <div class="notif-item"><i class="fa-solid fa-ban" style="color:var(--red-negative)"></i> REJECTED: BUY 5000 GME (Insufficient Buying Power)</div>
+                            <div class="notif-item"><i class="fa-solid fa-newspaper" style="color:var(--text-secondary)"></i> NEWS: Federal Reserve maintains current interest rates</div>
+                            <div class="notif-item"><i class="fa-solid fa-check-circle" style="color:var(--green-positive)"></i> Dividend received: $432.18 from AAPL</div>
+                            <div class="notif-item"><i class="fa-solid fa-arrow-trend-down" style="color:var(--red-negative)"></i> CRWV down 3.2% after hours</div>
+                            <div class="notif-item"><i class="fa-solid fa-bolt" style="color:var(--accent-blue)"></i> Option execution: SPY 450C Expired OTM</div>
+                            <div class="notif-item"><i class="fa-solid fa-check-circle" style="color:var(--green-positive)"></i> BOUGHT 100 TSLA @ MKT</div>
+                            <div class="notif-item"><i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b"></i> Margin call warning: Maintenance at 82%</div>
+                        </div>
+                    </div>
+
+                    <div class="profile-avatar desktop-avatar view-trigger" data-target="view-profile" style="cursor:pointer;"><i class="fa-solid fa-user"></i></div>
+                </div>
+            </header>
+
+            <div class="views-container">
+                
+                <section id="view-home" class="tab-view active">
+                    
+                    <div class="dashboard-grid">
+                        
+                        <div class="col-left">
+                            <div class="dashboard-section-header">
+                                <div class="title-tabs">
+                                    <span class="title-tab active">Value</span>
+                                    <span class="title-divider">|</span>
+                                    <span class="title-tab">Performance</span>
+                                </div>
+                                <button class="info-btn" title="Information"><i class="fa-solid fa-circle-info"></i></button>
+                            </div>
+
+                            <div class="balance-widget">
+                                <div class="balance-header">
+                                    <h1 id="balance-value" class="balance-amount" title="Double click to edit">$1,055,235<span class="cents">.74</span></h1>
+                                </div>
+                                <div class="balance-change positive" id="change-container">
+                                    <span id="change-value">+$17,553.98</span>
+                                    (<span id="change-percent">+1.69%</span>)
+                                    <span class="change-period">past month</span>
+                                </div>
+                            </div>
+
+                            <div class="chart-widget card">
+                                <div class="chart-container">
+                                    <canvas id="portfolioChart"></canvas>
+                                </div>
+                                <div class="time-range-pills">
+                                    <button class="pill" data-range="1W">1W</button>
+                                    <button class="pill" data-range="MTD">MTD</button>
+                                    <button class="pill active" data-range="1M">1M</button>
+                                    <button class="pill" data-range="3M">3M</button>
+                                    <button class="pill" data-range="YTD">YTD</button>
+                                    <button class="pill" data-range="1Y">1Y</button>
+                                    <button class="pill" data-range="ALL">All</button>
+                                </div>
+                            </div>
+
+                            <div class="l2-widget card desktop-only">
+                                <div class="widget-title">
+                                    <h4><i class="fa-solid fa-layer-group"></i> TSLA Level 2 Market Depth</h4>
+                                    <span class="live-dot">LIVE</span>
+                                </div>
+                                <div class="l2-tables">
+                                    <div class="l2-col">
+                                        <div class="l2-header"><span>Bid Size</span><span>Bid Price</span></div>
+                                        <div class="l2-row"><span class="size-val">400</span><span class="buy-price">198.45</span></div>
+                                        <div class="l2-row"><span class="size-val">1200</span><span class="buy-price">198.40</span></div>
+                                        <div class="l2-row"><span class="size-val">50</span><span class="buy-price">198.38</span></div>
+                                        <div class="l2-row"><span class="size-val">850</span><span class="buy-price">198.30</span></div>
+                                        <div class="l2-row"><span class="size-val">300</span><span class="buy-price">198.25</span></div>
+                                    </div>
+                                    <div class="l2-col">
+                                        <div class="l2-header"><span>Ask Price</span><span>Ask Size</span></div>
+                                        <div class="l2-row"><span class="sell-price">198.50</span><span class="size-val">100</span></div>
+                                        <div class="l2-row"><span class="sell-price">198.53</span><span class="size-val">350</span></div>
+                                        <div class="l2-row"><span class="sell-price">198.60</span><span class="size-val">900</span></div>
+                                        <div class="l2-row"><span class="sell-price">198.65</span><span class="size-val">200</span></div>
+                                        <div class="l2-row"><span class="sell-price">198.70</span><span class="size-val">550</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-right">
+                            
+                            <div class="quick-trade-widget card desktop-only">
+                                <h4>Order Entry</h4>
+                                <div class="trade-inputs">
+                                    <input type="text" value="TSLA" class="ticker-input">
+                                    <input type="number" value="100" class="qty-input">
+                                </div>
+                                <div class="trade-action-btns">
+                                    <button class="buy-btn">BUY MKT</button>
+                                    <button class="sell-btn">SELL MKT</button>
+                                </div>
+                            </div>
+
+                            <div class="news-card card" id="news-card">
+                                <div class="news-body">
+                                    <h4 id="news-headline" class="news-headline">TSLA ALERT: Levi & Korsinsky Files Securities Fraud Class Action Against Tesl...</h4>
+                                    <p id="news-meta" class="news-meta">Today 10:47 AM - Reuters News</p>
+                                </div>
+                                <div class="news-action"><i class="fa-solid fa-circle-info"></i></div>
+                            </div>
+                            
+                            <div class="carousel-indicators">
+                                <span class="dot active"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                            </div>
+
+                            <div class="movers-widget card desktop-only">
+                                <h4><i class="fa-solid fa-fire-flame-curved"></i> Active Movers</h4>
+                                <ul class="movers-list">
+                                    <li><span class="ticker">NVDA</span><span class="price">450.21</span><span class="change positive">+2.41%</span></li>
+                                    <li><span class="ticker">AAPL</span><span class="price">182.44</span><span class="change negative">-0.82%</span></li>
+                                    <li><span class="ticker">AMD</span><span class="price">112.50</span><span class="change positive">+1.25%</span></li>
+                                    <li><span class="ticker">QQQ</span><span class="price">370.10</span><span class="change positive">+0.95%</span></li>
+                                    <li><span class="ticker">SPY</span><span class="price">445.12</span><span class="change positive">+0.75%</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                </section>
+
+                <section id="view-profile" class="tab-view">
+                    <div class="tt-profile-container">
+                        <div class="tt-profile-header">
+                            <div class="tt-avatar-large">
+                                <img src="https://i.postimg.cc/GhdYPX2K/IMG-1817.jpg" alt="kd" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                            </div>                            <h2 class="tt-name">Nabil Khondaker</h2>
+                            <p class="tt-username">@ind7kuh</p>
+                        </div>
+                        
+                        <div class="tt-stats">
+                            <div class="tt-stat">
+                                <span class="tt-val">$57.5K</span>
+                                <span class="tt-label">Net Profit</span>
+                            </div>
+                            <div class="tt-stat">
+                                <span class="tt-val">894</span>
+                                <span class="tt-label">Followers</span>
+                            </div>
+                            <div class="tt-stat">
+                                <span class="tt-val">14</span>
+                                <span class="tt-label">Following</span>
+                            </div>
+                        </div>
+                        
+                        <div class="tt-bio">
+                            16 year old trader
+                            <br>yea i make more money den u
+                            <br><b>⚲</b> Riverside, CA
+                        </div>
+
+                        <div class="tt-graphs-scroll">
+                            <div class="graph-card">
+                                <h4>Order Flow Imbalance & RSI</h4>
+                                <div class="complex-chart-container">
+                                    <canvas id="complexChart1"></canvas>
+                                </div>
+                            </div>
+                            <div class="graph-card">
+                                <h4>Monte Carlo Risk Dispersion</h4>
+                                <div class="complex-chart-container">
+                                    <canvas id="complexChart2"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="view-order-history" class="tab-view">
+                    <div class="card" style="margin-top: 20px;">
+                        <div class="widget-title" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--nav-border); padding-bottom: 12px; margin-bottom: 12px;">
+                            <h4><i class="fa-solid fa-clock-rotate-left"></i> Order History (Jun 05 - Jul 30, 2026)</h4>
+                            <span style="font-weight: 600; font-size: 15px; color: var(--green-positive);">Total Net Profit: +$57,483.92</span>
+                        </div>
+                        
+                        <div style="overflow-x: auto;">
+                            <table class="order-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+                                <thead>
+                                    <tr style="background-color: var(--table-header); color: var(--text-muted); border-bottom: 1px solid var(--card-border);">
+                                        <th style="padding: 12px; font-weight: 600;">Date</th>
+                                        <th style="padding: 12px; font-weight: 600;">Symbol</th>
+                                        <th style="padding: 12px; font-weight: 600;">Type</th>
+                                        <th style="padding: 12px; font-weight: 600;">Qty</th>
+                                        <th style="padding: 12px; font-weight: 600;">Avg Price</th>
+                                        <th style="padding: 12px; font-weight: 600; text-align: right;">Realized P&L</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr style="border-bottom: 1px solid var(--card-border); transition: background 0.2s;" onmouseover="this.style.backgroundColor='var(--input-bg)'" onmouseout="this.style.backgroundColor='transparent'">
+                                        <td style="padding: 12px; color: var(--text-secondary);">Jul 30, 2026</td>
+                                        <td style="padding: 12px; font-weight: 600;">TSLA</td>
+                                        <td style="padding: 12px; color: var(--red-negative); font-weight: 600;">SELL</td>
+                                        <td style="padding: 12px;">300</td>
+                                        <td style="padding: 12px;">$215.42</td>
+                                        <td style="padding: 12px; color: var(--green-positive); font-weight: 600; text-align: right;">+$4,293.81</td>
+                                    </tr>
+                                    <tr style="transition: background 0.2s;" onmouseover="this.style.backgroundColor='var(--input-bg)'" onmouseout="this.style.backgroundColor='transparent'">
+                                        <td style="padding: 12px; color: var(--text-secondary);">Jun 05, 2026</td>
+                                        <td style="padding: 12px; font-weight: 600;">SNDK</td>
+                                        <td style="padding: 12px; color: var(--red-negative); font-weight: 600;">SELL</td>
+                                        <td style="padding: 12px;">700</td>
+                                        <td style="padding: 12px;">$69.80</td>
+                                        <td style="padding: 12px; color: var(--green-positive); font-weight: 600; text-align: right;">+$1,894.22</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="view-portfolio" class="tab-view placeholder-view"><h2>Portfolio</h2><p>Positions and asset distribution will appear here.</p></section>
+                <section id="view-explore" class="tab-view placeholder-view"><h2>Explore</h2><p>Market news, screeners, and discovery tools.</p></section>
+
+            </div>
+        </main>
+
+        <button class="universal-trade-btn">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 5l5 5-5 5" />
+                <path d="M20 10h-2" />
+                <line x1="15" y1="10" x2="6" y2="10" stroke-dasharray="2 3" />
+                <path d="M9 19l-5-5 5-5" />
+                <path d="M4 14h2" />
+                <line x1="9" y1="14" x2="18" y2="14" stroke-dasharray="2 3" />
+            </svg>
+            <span>Trade</span>
+        </button>
+
+        <nav class="bottom-nav">
+            <button class="nav-item active view-trigger" data-target="view-home"><i class="fa-solid fa-house"></i><span>Home</span></button>
+            <button class="nav-item view-trigger" data-target="view-portfolio"><i class="fa-solid fa-chart-pie"></i><span>Portfolio</span></button>
+            <button class="nav-item view-trigger" data-target="view-order-history"><i class="fa-solid fa-clock-rotate-left"></i><span>History</span></button>
+            <button class="nav-item view-trigger" data-target="view-explore"><i class="fa-solid fa-compass"></i><span>Explore</span></button>
+        </nav>
+    </div>
+
+    <div id="edit-modal" class="modal-backdrop">
+        <div class="modal-card">
+            <h3>Edit Portfolio Balance</h3>
+            <div class="form-group">
+                <label for="input-balance">Total Value ($)</label>
+                <input type="number" id="input-balance" step="0.01">
+            </div>
+            <div class="modal-actions">
+                <button id="cancel-modal-btn" class="btn btn-secondary">Cancel</button>
+                <button id="save-modal-btn" class="btn btn-primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
