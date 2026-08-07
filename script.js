@@ -1,5 +1,56 @@
 document.addEventListener('DOMContentLoaded', () => {
 
+    // --- AUTHENTICATION & SESSION EXPIRATION SYSTEM ---
+    const loginScreen = document.getElementById('login-screen');
+    const loginForm = document.getElementById('login-form');
+    const passwordInput = document.getElementById('password-input');
+    const loginError = document.getElementById('login-error');
+    
+    // Session timeout duration: 4 hours (in milliseconds)
+    const SESSION_TIMEOUT_MS = 4 * 60 * 60 * 1000;
+
+    function checkAuthSession() {
+        const authTimestamp = localStorage.getItem('ib_auth_timestamp');
+        if (authTimestamp) {
+            const timeElapsed = Date.now() - parseInt(authTimestamp, 10);
+            if (timeElapsed < SESSION_TIMEOUT_MS) {
+                // Session valid -> hide login overlay
+                loginScreen.classList.add('hidden');
+                return true;
+            }
+        }
+        // Session expired or missing -> show login overlay
+        loginScreen.classList.remove('hidden');
+        return false;
+    }
+
+    loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const enteredPassword = passwordInput.value.trim();
+
+        if (enteredPassword === 'nabil') {
+            // Save current timestamp to enable persistent session
+            localStorage.setItem('ib_auth_timestamp', Date.now().toString());
+            
+            loginError.classList.add('hidden');
+            loginScreen.classList.add('hidden');
+            passwordInput.value = '';
+            
+            // Resize active chart after login display
+            if (portfolioChart) portfolioChart.resize();
+        } else {
+            loginError.classList.remove('hidden');
+            passwordInput.focus();
+        }
+    });
+
+    passwordInput.addEventListener('input', () => {
+        loginError.classList.add('hidden');
+    });
+
+    // Run auth check on initial load
+    checkAuthSession();
+
     // --- DARK MODE PERSISTENCE ---
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme) {
@@ -19,10 +70,9 @@ document.addEventListener('DOMContentLoaded', () => {
         activeTimeframe: '1M'
     };
 
-    // --- CHART INITIALIZATION (Main Portfolio - Day Trading Style with MAs) ---
+    // --- CHART INITIALIZATION (Main Portfolio) ---
     const ctx = document.getElementById('portfolioChart').getContext('2d');
 
-    // Spiky / volatile datasets fluctuating up and down, ending at the current balance
     const chartDatasets = {
         '1W':  [33200, 32900, 33400, 33100, 33435.74],
         'MTD': [32000, 33200, 32500, 33500, 33435.74],
@@ -33,7 +83,6 @@ document.addEventListener('DOMContentLoaded', () => {
         'ALL': [19000, 26000, 22000, 30000, 27000, 33435.74]
     };
 
-    // Helper to calculate Simple Moving Average for day trading indicators
     function calculateSMA(data, period) {
         let sma = [];
         for (let i = 0; i < data.length; i++) {
@@ -77,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     borderWidth: 2,
                     pointRadius: 0,
                     pointHoverRadius: 5,
-                    tension: 0, // Sharp, spiky day-trading lines
+                    tension: 0,
                     fill: true,
                     backgroundColor: (context) => getGradient(context),
                     order: 2
@@ -249,7 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // --- STEALTH EDIT BALANCE (Double Click on Balance) ---
+    // --- STEALTH EDIT BALANCE ---
     const balanceDisplay = document.getElementById('balance-value');
     const modal = document.getElementById('edit-modal');
     const cancelBtn = document.getElementById('cancel-modal-btn');
@@ -288,7 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.classList.remove('active');
     });
 
-    // --- LEVEL 2 MARKET DATA ANIMATOR (Desktop Only) ---
+    // --- LEVEL 2 MARKET DATA ANIMATOR ---
     function animateLevel2() {
         const sizeElements = document.querySelectorAll('.size-val');
         if(sizeElements.length === 0) return;
@@ -340,7 +389,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- NAVIGATION (Including Profile) ---
+    // --- NAVIGATION ---
     const navItems = document.querySelectorAll('.view-trigger, .side-link:not(.desktop-only)');
     const views = document.querySelectorAll('.tab-view');
     const bottomNavItems = document.querySelectorAll('.bottom-nav .nav-item');
@@ -373,7 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // --- MOBILE PULL TO REFRESH (Top Area Only) ---
+    // --- MOBILE PULL TO REFRESH ---
     let startY = 0;
     let isPulling = false;
     const p2rIndicator = document.getElementById('p2r-indicator');
@@ -395,7 +444,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, {passive: true});
     
-    document.addEventListener('touchend', (e) => {
+    document.addEventListener('touchend', () => {
         if (!isPulling) return;
         
         if (p2rIndicator.style.transform.includes('10px') || p2rIndicator.style.transform.includes('translateY(0px)')) {
