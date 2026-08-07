@@ -4,11 +4,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interactive Brokers Dashboard</title>
+    <link rel="icon" type="image/png" href="https://i.postimg.cc/BQ3SXy6K/Untitled-(11).png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="https://i.postimg.cc/BQ3SXy6K/Untitled-(11).png" />
+    <link rel="shortcut icon" href="https://i.postimg.cc/BQ3SXy6K/Untitled-(11).png" />
+    <link rel="apple-touch-icon" href="https://i.postimg.cc/BQ3SXy6K/Untitled-(11).png" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+    <!-- IBKR STARTUP / LOGIN OVERLAY -->
+    <div id="login-screen" class="login-overlay">
+        <div class="login-card">
+            <div class="login-header">
+                <img src="https://i.postimg.cc/BQ3SXy6K/Untitled-(11).png" alt="Interactive Brokers Logo" class="login-logo">
+                <h2><strong>Interactive</strong>Brokers</h2>
+                <p class="login-subtitle">Trader Workstation & WebTrader Login</p>
+            </div>
+            <form id="login-form">
+                <div class="login-field">
+                    <label for="password-input">Account Sensitive Code</label>
+                    <div class="input-with-icon">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="password-input" placeholder="Enter code" required autocomplete="current-password">
+                    </div>
+                </div>
+                <div id="login-error" class="login-error hidden">
+                    <i class="fa-solid fa-circle-exclamation"></i> No account found. Please try again.
+                </div>
+                <button type="submit" id="login-btn" class="login-submit-btn">
+                    <span>Log In</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </form>
+            <div class="login-footer">
+                <i class="fa-solid fa-shield-halved"></i> 256-Bit SSL Encrypted Connection
+            </div>
+        </div>
+    </div>
 
     <div id="p2r-indicator">
         <i class="fa-solid fa-arrow-rotate-right fa-spin"></i> Refreshing...
@@ -38,10 +72,10 @@
             <header class="top-header">
                 <div class="mobile-logo-container">
                     <div class="profile-avatar view-trigger" data-target="view-profile" style="cursor:pointer;"><i class="fa-solid fa-user"></i></div>
-                <div class="ib-logo">
-                    <img src="https://i.postimg.cc/BQ3SXy6K/Untitled-(11).png" width="22" height="22" alt="Interactive Brokers" class="custom-logo">
-                    <span class="ib-text"><strong>Interactive</strong>Brokers</span>
-                </div>
+                    <div class="ib-logo">
+                        <img src="https://i.postimg.cc/BQ3SXy6K/Untitled-(11).png" width="22" height="22" alt="Interactive Brokers" class="custom-logo">
+                        <span class="ib-text"><strong>Interactive</strong>Brokers</span>
+                    </div>
                 </div>
 
                 <div class="desktop-search">
@@ -94,11 +128,11 @@
 
                             <div class="balance-widget">
                                 <div class="balance-header">
-                                    <h1 id="balance-value" class="balance-amount" title="Double click to edit">$1,055,235<span class="cents">.74</span></h1>
+                                    <h1 id="balance-value" class="balance-amount" title="Double click to edit">$33,435<span class="cents">.74</span></h1>
                                 </div>
                                 <div class="balance-change positive" id="change-container">
-                                    <span id="change-value">+$17,553.98</span>
-                                    (<span id="change-percent">+1.69%</span>)
+                                    <span id="change-value">+$2,453.98</span>
+                                    (<span id="change-percent">+7.93%</span>)
                                     <span class="change-period">past month</span>
                                 </div>
                             </div>
