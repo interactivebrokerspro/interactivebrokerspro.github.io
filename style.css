@@ -595,18 +595,49 @@ body { background-color: var(--bg-page); color: var(--text-primary); transition:
 }
 
 .cal-day.win {
-    background: var(--cal-green);
-    color: #fff;
+    background: rgba(15, 157, 88, 0.28);
+    color: #6ee7a0;
+    border: 1px solid rgba(15, 157, 88, 0.45);
+    box-shadow:
+        0 0 12px rgba(15, 157, 88, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 .cal-day.loss {
-    background: var(--cal-red);
-    color: #fff;
+    background: rgba(211, 47, 47, 0.28);
+    color: #fca5a5;
+    border: 1px solid rgba(211, 47, 47, 0.45);
+    box-shadow:
+        0 0 12px rgba(211, 47, 47, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+[data-theme="dark"] .cal-day.win {
+    background: rgba(38, 166, 154, 0.22);
+    color: #5eead4;
+    border-color: rgba(38, 166, 154, 0.4);
+    box-shadow:
+        0 0 14px rgba(38, 166, 154, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .cal-day.loss {
+    background: rgba(239, 83, 80, 0.22);
+    color: #fca5a5;
+    border-color: rgba(239, 83, 80, 0.4);
+    box-shadow:
+        0 0 14px rgba(239, 83, 80, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .cal-day.empty {
-    background: var(--cal-empty);
+    background: rgba(128, 128, 128, 0.08);
     color: var(--text-muted);
+    border: 1px solid rgba(128, 128, 128, 0.12);
 }
 
 .cal-day.future {
@@ -1068,8 +1099,22 @@ body { background-color: var(--bg-page); color: var(--text-primary); transition:
     border-radius: 3px;
     background: var(--cal-empty);
 }
-.year-mini-dot.win { background: var(--cal-green); }
-.year-mini-dot.loss { background: var(--cal-red); }
+.year-mini-dot.win {
+    background: rgba(15, 157, 88, 0.55);
+    box-shadow: 0 0 4px rgba(15, 157, 88, 0.35);
+}
+.year-mini-dot.loss {
+    background: rgba(211, 47, 47, 0.55);
+    box-shadow: 0 0 4px rgba(211, 47, 47, 0.35);
+}
+[data-theme="dark"] .year-mini-dot.win {
+    background: rgba(38, 166, 154, 0.5);
+    box-shadow: 0 0 5px rgba(38, 166, 154, 0.4);
+}
+[data-theme="dark"] .year-mini-dot.loss {
+    background: rgba(239, 83, 80, 0.5);
+    box-shadow: 0 0 5px rgba(239, 83, 80, 0.4);
+}
 .year-mini-dot.none { background: transparent; }
 .year-mini-dot.future { background: var(--cal-future); opacity: 0.4; }
 
@@ -1094,4 +1139,68 @@ body { background-color: var(--bg-page); color: var(--text-primary); transition:
     .year-month-name { font-size: 14px; }
     .year-month-pnl { font-size: 14px; }
     .year-mini-cal { max-width: 100px; gap: 4px; }
+}
+
+/* ===== MONTH / YEAR NAV TRANSITIONS ===== */
+.cal-grid {
+    transition: opacity 0.18s ease, transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cal-grid.cal-slide-out-left {
+    opacity: 0;
+    transform: translateX(-18px);
+}
+.cal-grid.cal-slide-out-right {
+    opacity: 0;
+    transform: translateX(18px);
+}
+.cal-grid.cal-slide-in-left {
+    animation: calSlideInFromRight 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cal-grid.cal-slide-in-right {
+    animation: calSlideInFromLeft 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes calSlideInFromRight {
+    from { opacity: 0; transform: translateX(22px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+@keyframes calSlideInFromLeft {
+    from { opacity: 0; transform: translateX(-22px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.cal-month-title {
+    transition: opacity 0.15s ease, transform 0.2s ease;
+}
+.cal-month-title.cal-title-out {
+    opacity: 0;
+    transform: translateY(-4px);
+}
+
+.cal-nav-btn {
+    transition: transform 0.15s ease, background 0.2s, opacity 0.2s;
+}
+.cal-nav-btn:active:not(:disabled) {
+    transform: scale(0.88);
+}
+
+.year-months-grid {
+    transition: opacity 0.18s ease, transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.year-months-grid.cal-slide-out-left {
+    opacity: 0;
+    transform: translateX(-16px);
+}
+.year-months-grid.cal-slide-out-right {
+    opacity: 0;
+    transform: translateX(16px);
+}
+.year-months-grid.cal-slide-in-left {
+    animation: calSlideInFromRight 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.year-months-grid.cal-slide-in-right {
+    animation: calSlideInFromLeft 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.year-month-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
 }
