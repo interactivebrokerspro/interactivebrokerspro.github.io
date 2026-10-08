@@ -61,9 +61,14 @@
                 <a href="#" class="side-link active view-trigger" data-target="view-home"><i class="fa-solid fa-house"></i> Home</a>
                 <a href="#" class="side-link view-trigger" data-target="view-portfolio"><i class="fa-solid fa-chart-pie"></i> Portfolio</a>
                 <a href="#" class="side-link view-trigger" data-target="view-order-history"><i class="fa-solid fa-clock-rotate-left"></i> Order History</a>
-                <a href="#" class="side-link view-trigger" data-target="view-explore"><i class="fa-solid fa-compass"></i> Explore</a>
+                <a href="#" class="side-link view-trigger" data-target="view-explore"><i class="fa-solid fa-bolt"></i> Live Screener</a>
                 <div class="sidebar-divider"></div>
-                <a href="#" class="side-link desktop-only"><i class="fa-solid fa-bolt"></i> Live Screener</a>
+                <a href="#" class="side-link view-trigger" data-target="view-profile"><i class="fa-solid fa-user-shield"></i> Account</a>
+                <a href="#" class="side-link desktop-only" id="side-msg-btn"><i class="fa-regular fa-comment-dots"></i> Messages <span class="side-badge">4</span></a>
+                <div class="sidebar-footer-meta">
+                    <div class="conn-status"><span class="conn-dot"></span> Connected · TWS Gateway</div>
+                    <div class="conn-sub">U1234567 · Paper-Live Bridge</div>
+                </div>
             </nav>
         </aside>
 
@@ -85,30 +90,63 @@
 
                 <div class="header-actions">
                     <button id="dark-mode-toggle" class="icon-btn" title="Toggle Theme"><i class="fa-regular fa-moon"></i></button>
-                    <button class="icon-btn" title="Messages"><i class="fa-regular fa-comment-dots"></i></button>
+                    <div class="msg-wrapper">
+                        <button id="msg-btn" class="icon-btn" title="Messages"><i class="fa-regular fa-comment-dots"></i><span class="notif-badge msg-badge">4</span></button>
+                        <div id="msg-dropdown" class="notif-dropdown msg-dropdown hidden">
+                            <div class="notif-header">Secure Messages <span class="notif-count">4 unread</span></div>
+                            <div class="msg-item unread"><div class="msg-from">IBKR Compliance</div><div class="msg-preview">Pattern Day Trader status: Not applicable (margin acct)…</div><div class="msg-time">Today 09:12</div></div>
+                            <div class="msg-item unread"><div class="msg-from">Trade Confirmations</div><div class="msg-preview">FILL 2026-10-06 MES short 2 @ 5824.25 — confirmed</div><div class="msg-time">Yesterday</div></div>
+                            <div class="msg-item unread"><div class="msg-from">Corporate Actions</div><div class="msg-preview">AAPL dividend $0.25 payable 2026-11-14</div><div class="msg-time">Oct 3</div></div>
+                            <div class="msg-item unread"><div class="msg-from">Risk Systems</div><div class="msg-preview">Daily loss limit set to 2.0% NLV — active</div><div class="msg-time">Oct 1</div></div>
+                            <div class="msg-item"><div class="msg-from">Account Services</div><div class="msg-preview">Statement for Sep 2026 is available</div><div class="msg-time">Sep 30</div></div>
+                            <div class="msg-footer">View message center →</div>
+                        </div>
+                    </div>
                     
                     <div class="notif-wrapper">
-                        <button id="notif-btn" class="icon-btn" title="Notifications"><i class="fa-regular fa-bell"></i><span class="notif-badge">12</span></button>
+                        <button id="notif-btn" class="icon-btn" title="Notifications"><i class="fa-regular fa-bell"></i><span class="notif-badge">18</span></button>
                         <div id="notif-dropdown" class="notif-dropdown hidden" style="max-height: 400px; overflow-y: auto;">
-                            <div class="notif-header">Notifications</div>
-                            <div class="notif-item"><i class="fa-solid fa-shield-halved" style="color:var(--accent-blue)"></i> Logged in from new IP address (Riverside, CA)</div>
-                            <div class="notif-item"><i class="fa-solid fa-check-circle" style="color:var(--green-positive)"></i> FILLED: SELL 300 TSLA @ 215.42</div>
-                            <div class="notif-item"><i class="fa-solid fa-file-invoice" style="color:var(--text-secondary)"></i> Account Statement available for June 2026</div>
-                            <div class="notif-item"><i class="fa-solid fa-arrow-trend-up" style="color:var(--accent-blue)"></i> NVDA up 2.4% in pre-market trading</div>
-                            <div class="notif-item"><i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b"></i> Early assignment risk on MARA 35C</div>
-                            <div class="notif-item"><i class="fa-solid fa-ban" style="color:var(--red-negative)"></i> REJECTED: BUY 5000 GME (Insufficient Buying Power)</div>
-                            <div class="notif-item"><i class="fa-solid fa-newspaper" style="color:var(--text-secondary)"></i> NEWS: Federal Reserve maintains current interest rates</div>
-                            <div class="notif-item"><i class="fa-solid fa-check-circle" style="color:var(--green-positive)"></i> Dividend received: $432.18 from AAPL</div>
-                            <div class="notif-item"><i class="fa-solid fa-arrow-trend-down" style="color:var(--red-negative)"></i> CRWV down 3.2% after hours</div>
-                            <div class="notif-item"><i class="fa-solid fa-bolt" style="color:var(--accent-blue)"></i> Option execution: SPY 450C Expired OTM</div>
-                            <div class="notif-item"><i class="fa-solid fa-check-circle" style="color:var(--green-positive)"></i> BOUGHT 100 TSLA @ MKT</div>
-                            <div class="notif-item"><i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b"></i> Margin call warning: Maintenance at 82%</div>
+                            <div class="notif-header">Alerts &amp; Activity <span class="notif-count">18</span></div>
+                            <div class="notif-item"><i class="fa-solid fa-check-circle" style="color:var(--green-positive)"></i><div><strong>FILL</strong> MES short 2 @ 5824.25<span class="notif-meta">10:47:12 ET · +$1,225.90</span></div></div>
+                            <div class="notif-item"><i class="fa-solid fa-check-circle" style="color:var(--green-positive)"></i><div><strong>FILL</strong> MNQ long 3 @ 20148.50<span class="notif-meta">10/06 09:41 ET · +$14,453.23</span></div></div>
+                            <div class="notif-item"><i class="fa-solid fa-shield-halved" style="color:var(--accent-blue)"></i><div>Login from Riverside, CA (IPv4)<span class="notif-meta">Today 08:02 ET · TWS</span></div></div>
+                            <div class="notif-item"><i class="fa-solid fa-gauge-high" style="color:#f59e0b"></i><div>Risk: daily loss utilization 0.4% of 2.0% cap<span class="notif-meta">Live</span></div></div>
+                            <div class="notif-item"><i class="fa-solid fa-layer-group" style="color:var(--accent-blue)"></i><div>L2 reconnect — ARCA/NASDAQ depth OK<span class="notif-meta">09:30:01 ET</span></div></div>
+                            <div class="notif-item"><i class="fa-solid fa-ban" style="color:var(--red-negative)"></i><div><strong>REJECT</strong> BUY 5000 GME — buying power<span class="notif-meta">Sep 24 · Order rejected</span></div></div>
+                            <div class="notif-item"><i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b"></i><div>FOMC window — volatility filter ON<span class="notif-meta">Sep 29</span></div></div>
+                            <div class="notif-item"><i class="fa-solid fa-file-invoice" style="color:var(--text-secondary)"></i><div>Sep 2026 activity statement ready<span class="notif-meta">Statements</span></div></div>
+                            <div class="notif-item"><i class="fa-solid fa-newspaper" style="color:var(--text-secondary)"></i><div>NEWS Fed holds rates — CME futures reaction<span class="notif-meta">Reuters</span></div></div>
+                            <div class="notif-item"><i class="fa-solid fa-arrow-trend-up" style="color:var(--green-positive)"></i><div>NVDA +2.4% pre-market / unusual volume<span class="notif-meta">Scanner</span></div></div>
+                            <div class="notif-item"><i class="fa-solid fa-coins" style="color:var(--green-positive)"></i><div>Dividend credited AAPL $432.18<span class="notif-meta">Cash</span></div></div>
+                            <div class="notif-item"><i class="fa-solid fa-clock" style="color:var(--accent-blue)"></i><div>MES/MNQ flat rule — flatten by 15:55 ET<span class="notif-meta">Risk rule</span></div></div>
+                            <div class="notif-item"><i class="fa-solid fa-bolt" style="color:var(--accent-blue)"></i><div>SPY 450C expired OTM — no assignment<span class="notif-meta">Options</span></div></div>
+                            <div class="notif-item"><i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b"></i><div>Maint. margin 82% — buffer OK<span class="notif-meta">Margin</span></div></div>
+                            <div class="notif-item"><i class="fa-solid fa-server" style="color:var(--text-secondary)"></i><div>Gateway heartbeat 42ms · Chicago<span class="notif-meta">Infra</span></div></div>
+                            <div class="notif-item"><i class="fa-solid fa-check-circle" style="color:var(--green-positive)"></i><div>BOUGHT 100 TSLA @ MKT 198.52<span class="notif-meta">Prior session</span></div></div>
+                            <div class="notif-item"><i class="fa-solid fa-shield-halved" style="color:var(--accent-blue)"></i><div>Shariah screen refresh complete (weekend)<span class="notif-meta">Compliance</span></div></div>
+                            <div class="notif-item"><i class="fa-solid fa-chart-line" style="color:var(--green-positive)"></i><div>Win rate 74.2% · 90d trailing<span class="notif-meta">Stats</span></div></div>
                         </div>
                     </div>
 
                     <div class="profile-avatar desktop-avatar view-trigger" data-target="view-profile" style="cursor:pointer;"><i class="fa-solid fa-user"></i></div>
                 </div>
             </header>
+
+            <div class="status-ticker" id="status-ticker">
+                <div class="ticker-track">
+                    <span>MES 5824.25 <em class="pos">+0.18%</em></span>
+                    <span>MNQ 20148.50 <em class="pos">+0.32%</em></span>
+                    <span>ES 5824.00 <em class="pos">+10.50</em></span>
+                    <span>NQ 20148.00 <em class="pos">+64.25</em></span>
+                    <span>SPY 445.12 <em class="pos">+0.75%</em></span>
+                    <span>QQQ 370.10 <em class="pos">+0.95%</em></span>
+                    <span>VIX 14.82 <em class="neg">-2.1%</em></span>
+                    <span>DXY 104.22 <em class="pos">+0.12%</em></span>
+                    <span>NLV $67,490.78</span>
+                    <span>BP $214,820</span>
+                    <span class="pos">GATEWAY OK · 42ms</span>
+                </div>
+            </div>
 
             <div class="views-container">
                 
@@ -205,7 +243,26 @@
                                 <span class="dot active"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
                             </div>
 
-                            <!-- Active Movers (Visible on Mobile & Desktop under TSLA Alert) -->
+                            <!-- Time & Sales + session util: directly under TSLA alert (mobile + desktop) -->
+                            <div class="card home-tas">
+                                <div class="widget-title"><h4><i class="fa-solid fa-stream"></i> Time &amp; Sales · TSLA</h4><span class="live-dot">TAPE</span></div>
+                                <div class="tas-list" id="home-tas">
+                                    <div class="tas-row buy"><span>10:47:21</span><span>198.52</span><span>100</span></div>
+                                    <div class="tas-row sell"><span>10:47:20</span><span>198.51</span><span>250</span></div>
+                                    <div class="tas-row buy"><span>10:47:19</span><span>198.53</span><span>500</span></div>
+                                    <div class="tas-row buy"><span>10:47:18</span><span>198.50</span><span>75</span></div>
+                                    <div class="tas-row sell"><span>10:47:17</span><span>198.49</span><span>300</span></div>
+                                    <div class="tas-row buy"><span>10:47:16</span><span>198.52</span><span>1,200</span></div>
+                                </div>
+                            </div>
+                            <div class="card util-strip">
+                                <div class="util-row"><span>Session</span><span class="mono">RTH · ET</span></div>
+                                <div class="util-row"><span>Open orders</span><span class="mono">0</span></div>
+                                <div class="util-row"><span>Fills today</span><span class="mono">2</span></div>
+                                <div class="util-row"><span>Realized MTD</span><span class="mono pos">+$17,340.21</span></div>
+                            </div>
+
+                            <!-- Active Movers -->
                             <div class="movers-widget card">
                                 <h4><i class="fa-solid fa-fire-flame-curved"></i> Active Movers</h4>
                                 <ul class="movers-list">
@@ -214,6 +271,8 @@
                                     <li><span class="ticker">AMD</span><span class="price">112.50</span><span class="change positive">+1.25%</span></li>
                                     <li><span class="ticker">QQQ</span><span class="price">370.10</span><span class="change positive">+0.95%</span></li>
                                     <li><span class="ticker">SPY</span><span class="price">445.12</span><span class="change positive">+0.75%</span></li>
+                                    <li><span class="ticker">MES</span><span class="price">5824.25</span><span class="change positive">+0.18%</span></li>
+                                    <li><span class="ticker">MNQ</span><span class="price">20148.50</span><span class="change positive">+0.32%</span></li>
                                 </ul>
                             </div>
                         </div>
@@ -252,9 +311,44 @@
                             <br><b>⚲</b> Riverside, CA
                         </div>
 
+                        <div class="account-util-grid">
+                            <div class="card util-panel">
+                                <h4><i class="fa-solid fa-building-columns"></i> Account</h4>
+                                <div class="util-row"><span>Account ID</span><span class="mono">U1234567</span></div>
+                                <div class="util-row"><span>Type</span><span>Margin · Individual</span></div>
+                                <div class="util-row"><span>Base Currency</span><span>USD</span></div>
+                                <div class="util-row"><span>NLV</span><span class="mono pos">$67,490.78</span></div>
+                                <div class="util-row"><span>Cash</span><span class="mono">$41,208.12</span></div>
+                                <div class="util-row"><span>Buying Power</span><span class="mono">$214,820.40</span></div>
+                                <div class="util-row"><span>Maint. Margin</span><span class="mono">$12,440.00</span></div>
+                                <div class="util-row"><span>Excess Liq.</span><span class="mono">$89,412.00</span></div>
+                            </div>
+                            <div class="card util-panel">
+                                <h4><i class="fa-solid fa-shield-halved"></i> Risk &amp; Compliance</h4>
+                                <div class="util-row"><span>Max daily loss</span><span>2.0% NLV</span></div>
+                                <div class="util-row"><span>Open risk cap</span><span>1.5% NLV</span></div>
+                                <div class="util-row"><span>Per-trade risk</span><span>0.75% NLV</span></div>
+                                <div class="util-row"><span>Futures overnight</span><span class="neg">Blocked</span></div>
+                                <div class="util-row"><span>Shariah screen</span><span class="pos">Active</span></div>
+                                <div class="util-row"><span>PDT flag</span><span>N/A (margin)</span></div>
+                                <div class="util-row"><span>Flatten deadline</span><span class="mono">15:55 ET</span></div>
+                            </div>
+                            <div class="card util-panel">
+                                <h4><i class="fa-solid fa-briefcase"></i> Open Positions</h4>
+                                <div class="pos-empty">No open positions · flat</div>
+                                <div class="util-row muted"><span>Last flat</span><span class="mono">2026-10-07 10:47 ET</span></div>
+                            </div>
+                            <div class="card util-panel">
+                                <h4><i class="fa-solid fa-network-wired"></i> Connectivity</h4>
+                                <div class="util-row"><span>Gateway</span><span class="pos">Connected</span></div>
+                                <div class="util-row"><span>Latency</span><span class="mono">42 ms</span></div>
+                                <div class="util-row"><span>Market data</span><span>NASDAQ TotalView · CME</span></div>
+                                <div class="util-row"><span>Routing</span><span>SMART / ISLAND</span></div>
+                            </div>
+                        </div>
                         <div class="tt-graphs-scroll">
                             <div class="graph-card">
-                                <h4>Order Flow Imbalance & RSI</h4>
+                                <h4>Order Flow Imbalance &amp; RSI</h4>
                                 <div class="complex-chart-container">
                                     <canvas id="complexChart1"></canvas>
                                 </div>
@@ -1143,7 +1237,88 @@
                         </div>
                     </div>
                 </section>
-                <section id="view-explore" class="tab-view placeholder-view"><h2>Explore</h2><p>Market news, screeners, and discovery tools.</p></section>
+                <section id="view-explore" class="tab-view">
+                    <div class="screener-page">
+                        <div class="screener-toolbar card">
+                            <div class="screener-title"><i class="fa-solid fa-bolt"></i> Live Market Screener</div>
+                            <div class="screener-filters">
+                                <button class="scr-filter active" data-scr="gainers">Gainers</button>
+                                <button class="scr-filter" data-scr="losers">Losers</button>
+                                <button class="scr-filter" data-scr="volume">High Volume</button>
+                                <button class="scr-filter" data-scr="futures">MES / MNQ</button>
+                                <button class="scr-filter" data-scr="shariah">Shariah</button>
+                            </div>
+                            <div class="screener-meta"><span class="live-dot">LIVE</span> <span id="scr-clock">10:47:22 ET</span></div>
+                        </div>
+                        <div class="screener-grid">
+                            <div class="card screener-table-wrap">
+                                <table class="scr-table" id="scr-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Symbol</th><th>Last</th><th>Chg%</th><th>Volume</th><th>Bid</th><th>Ask</th><th>Spread</th><th>RVOL</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="scr-body">
+                                        <tr data-sym="NVDA"><td class="sym">NVDA</td><td>450.21</td><td class="pos">+2.41%</td><td>48.2M</td><td>450.18</td><td>450.24</td><td>0.06</td><td>1.84x</td></tr>
+                                        <tr data-sym="TSLA"><td class="sym">TSLA</td><td>198.52</td><td class="pos">+1.12%</td><td>62.1M</td><td>198.50</td><td>198.55</td><td>0.05</td><td>1.22x</td></tr>
+                                        <tr data-sym="AMD"><td class="sym">AMD</td><td>112.50</td><td class="pos">+1.25%</td><td>31.4M</td><td>112.48</td><td>112.53</td><td>0.05</td><td>1.41x</td></tr>
+                                        <tr data-sym="MU"><td class="sym">MU</td><td>98.74</td><td class="pos">+3.02%</td><td>22.8M</td><td>98.70</td><td>98.78</td><td>0.08</td><td>2.10x</td></tr>
+                                        <tr data-sym="QQQ"><td class="sym">QQQ</td><td>370.10</td><td class="pos">+0.95%</td><td>28.6M</td><td>370.08</td><td>370.12</td><td>0.04</td><td>0.98x</td></tr>
+                                        <tr data-sym="SPY"><td class="sym">SPY</td><td>445.12</td><td class="pos">+0.75%</td><td>41.0M</td><td>445.10</td><td>445.14</td><td>0.04</td><td>0.91x</td></tr>
+                                        <tr data-sym="AAPL"><td class="sym">AAPL</td><td>182.44</td><td class="neg">-0.82%</td><td>39.5M</td><td>182.42</td><td>182.46</td><td>0.04</td><td>1.05x</td></tr>
+                                        <tr data-sym="META"><td class="sym">META</td><td>512.30</td><td class="pos">+0.64%</td><td>12.1M</td><td>512.20</td><td>512.40</td><td>0.20</td><td>0.88x</td></tr>
+                                        <tr data-sym="MSFT"><td class="sym">MSFT</td><td>428.15</td><td class="pos">+0.41%</td><td>15.3M</td><td>428.10</td><td>428.20</td><td>0.10</td><td>0.79x</td></tr>
+                                        <tr data-sym="CRWV"><td class="sym">CRWV</td><td>24.18</td><td class="neg">-3.20%</td><td>8.4M</td><td>24.15</td><td>24.22</td><td>0.07</td><td>2.55x</td></tr>
+                                        <tr data-sym="MES"><td class="sym">MES</td><td>5824.25</td><td class="pos">+0.18%</td><td>142k</td><td>5824.00</td><td>5824.50</td><td>0.50</td><td>—</td></tr>
+                                        <tr data-sym="MNQ"><td class="sym">MNQ</td><td>20148.50</td><td class="pos">+0.32%</td><td>98k</td><td>20148.00</td><td>20149.00</td><td>1.00</td><td>—</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="screener-side">
+                                <div class="card">
+                                    <div class="widget-title"><h4><i class="fa-solid fa-book"></i> Depth · <span id="scr-sym-label">NVDA</span></h4><span class="live-dot">L2</span></div>
+                                    <div class="l2-tables" id="scr-l2">
+                                        <div class="l2-col">
+                                            <div class="l2-header"><span>Bid Sz</span><span>Bid</span></div>
+                                            <div class="l2-row"><span class="size-val">800</span><span class="buy-price">450.18</span></div>
+                                            <div class="l2-row"><span class="size-val">1200</span><span class="buy-price">450.15</span></div>
+                                            <div class="l2-row"><span class="size-val">450</span><span class="buy-price">450.10</span></div>
+                                            <div class="l2-row"><span class="size-val">2100</span><span class="buy-price">450.05</span></div>
+                                            <div class="l2-row"><span class="size-val">900</span><span class="buy-price">450.00</span></div>
+                                        </div>
+                                        <div class="l2-col">
+                                            <div class="l2-header"><span>Ask</span><span>Ask Sz</span></div>
+                                            <div class="l2-row"><span class="sell-price">450.24</span><span class="size-val">600</span></div>
+                                            <div class="l2-row"><span class="sell-price">450.28</span><span class="size-val">1100</span></div>
+                                            <div class="l2-row"><span class="sell-price">450.32</span><span class="size-val">750</span></div>
+                                            <div class="l2-row"><span class="sell-price">450.40</span><span class="size-val">1800</span></div>
+                                            <div class="l2-row"><span class="sell-price">450.45</span><span class="size-val">500</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card">
+                                    <div class="widget-title"><h4><i class="fa-solid fa-stream"></i> Time &amp; Sales</h4></div>
+                                    <div class="tas-list" id="tas-list">
+                                        <div class="tas-row buy"><span>10:47:21</span><span>450.22</span><span>200</span></div>
+                                        <div class="tas-row sell"><span>10:47:20</span><span>450.20</span><span>150</span></div>
+                                        <div class="tas-row buy"><span>10:47:19</span><span>450.21</span><span>500</span></div>
+                                        <div class="tas-row buy"><span>10:47:18</span><span>450.19</span><span>100</span></div>
+                                        <div class="tas-row sell"><span>10:47:17</span><span>450.18</span><span>300</span></div>
+                                        <div class="tas-row buy"><span>10:47:16</span><span>450.21</span><span>75</span></div>
+                                        <div class="tas-row sell"><span>10:47:15</span><span>450.17</span><span>420</span></div>
+                                        <div class="tas-row buy"><span>10:47:14</span><span>450.20</span><span>1,000</span></div>
+                                    </div>
+                                </div>
+                                <div class="card util-strip">
+                                    <div class="util-row"><span>Buying Power</span><span class="mono">$214,820.40</span></div>
+                                    <div class="util-row"><span>Excess Liquidity</span><span class="mono">$89,412.00</span></div>
+                                    <div class="util-row"><span>Open Risk</span><span class="mono pos">0.00% NLV</span></div>
+                                    <div class="util-row"><span>Day Trades (5bd)</span><span class="mono">0 / ∞</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
 
             </div>
         </main>
