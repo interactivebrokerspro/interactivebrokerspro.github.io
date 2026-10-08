@@ -916,28 +916,158 @@ document.addEventListener('DOMContentLoaded', () => {
             renderCalendar();
         });
     });
-        // ----- View mode switching (Month / Year) -----
+        // ----- View mode switching (Week / Month / Year) -----
     let calMode = 'month';
     let yearViewYear = 2026;
+
+    // Monday of the week that contains TODAY (Oct 7 2026 → Mon Oct 5)
+    function getMonday(d) {
+        const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        const day = x.getDay(); // 0=Sun
+        const diff = day === 0 ? -6 : 1 - day;
+        x.setDate(x.getDate() + diff);
+        return x;
+    }
+    let weekStart = getMonday(TODAY); // Monday of current week
 
     function showCalPanel(mode) {
         const monthPanel = document.getElementById('cal-month-view');
         const yearPanel = document.getElementById('cal-year-view');
+        const weekPanel = document.getElementById('cal-week-view');
         if (!monthPanel || !yearPanel) return;
 
+        [monthPanel, yearPanel, weekPanel].forEach(p => { if (p) p.classList.remove('active'); });
+
         if (mode === 'year') {
-            monthPanel.classList.remove('active');
             void yearPanel.offsetWidth;
             yearPanel.classList.add('active');
             renderYearView();
+        } else if (mode === 'week') {
+            if (weekPanel) {
+                void weekPanel.offsetWidth;
+                weekPanel.classList.add('active');
+            }
+            renderWeekView();
+        } else if (mode === 'all') {
+            // All time → jump to year view of live year
+            yearViewYear = 2026;
+            void yearPanel.offsetWidth;
+            yearPanel.classList.add('active');
+            const yearPill = document.querySelector('.cal-range-pill[data-mode="year"]');
+            document.querySelectorAll('.cal-range-pill').forEach(b => b.classList.remove('active'));
+            if (yearPill) yearPill.classList.add('active');
+            renderYearView();
+            calMode = 'year';
+            return;
         } else {
-            yearPanel.classList.remove('active');
             void monthPanel.offsetWidth;
             monthPanel.classList.add('active');
             renderCalendar();
         }
         calMode = mode;
     }
+
+    function renderWeekView() {
+        const grid = document.getElementById('cal-week-grid');
+        const title = document.getElementById('cal-week-title');
+        const totalEl = document.getElementById('cal-week-total');
+        const goalFill = document.getElementById('week-goal-fill');
+        const prevBtn = document.getElementById('cal-week-prev');
+        const nextBtn = document.getElementById('cal-week-next');
+        if (!grid) return;
+
+        const mon = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate());
+        const fri = new Date(mon); fri.setDate(mon.getDate() + 4);
+
+        const shortM = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const sameMonth = mon.getMonth() === fri.getMonth();
+        const titleStr = sameMonth
+            ? shortM[mon.getMonth()] + ' ' + mon.getDate() + ' – ' + fri.getDate() + ', ' + mon.getFullYear()
+            : shortM[mon.getMonth()] + ' ' + mon.getDate() + ' – ' + shortM[fri.getMonth()] + ' ' + fri.getDate() + ', ' + fri.getFullYear();
+        if (title) title.textContent = titleStr;
+
+        // Nav limits: first trade week → current week
+        const firstMon = getMonday(FIRST_TRADE);
+        const todayMon = getMonday(TODAY);
+        if (prevBtn) prevBtn.disabled = mon <= firstMon;
+        if (nextBtn) nextBtn.disabled = mon >= todayMon;
+
+        let weekTotal = 0;
+        grid.innerHTML = '';
+
+        for (let i = 0; i < 5; i++) {
+            const d = new Date(mon); d.setDate(mon.getDate() + i);
+            const key = dateKey(d);
+            const data = dailyPnL[key];
+            const isFuture = d > TODAY;
+            const isBefore = d < FIRST_TRADE;
+            const el = document.createElement('div');
+            el.className = 'cal-day';
+
+            if (isFuture || isBefore) {
+                el.classList.add('future');
+                el.innerHTML = '<span class="cal-day-num">' + d.getDate() + '</span><span class="cal-day-pnl">—</span>';
+            } else if (!data || !data.trades) {
+                el.classList.add('empty');
+                el.innerHTML = '<span class="cal-day-num">' + d.getDate() + '</span><span class="cal-day-pnl">—</span>';
+            } else {
+                weekTotal += data.pnl;
+                el.classList.add(data.pnl >= 0 ? 'win' : 'loss', 'has-data');
+                el.innerHTML = '<span class="cal-day-num">' + d.getDate() + '</span>' +
+                    '<span class="cal-day-pnl">' + formatPnL(data.pnl) + '</span>' +
+                    '<span class="cal-day-trades">' + data.trades + ' trade' + (data.trades > 1 ? 's' : '') + '</span>';
+            }
+            // highlight today
+            if (dateKey(d) === dateKey(TODAY)) el.style.outline = '2px solid var(--accent-blue)';
+            grid.appendChild(el);
+        }
+
+        if (totalEl) {
+            const sign = weekTotal >= 0 ? '+' : '';
+            totalEl.textContent = sign + '$' + Math.abs(weekTotal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            totalEl.className = 'stat-value ' + (weekTotal >= 0 ? 'positive' : 'negative');
+        }
+        const weekGoal = 1500;
+        if (goalFill) {
+            const pct = weekTotal <= 0 ? 0 : Math.min(100, (weekTotal / weekGoal) * 100);
+            goalFill.style.width = pct + '%';
+        }
+        const goalCur = document.getElementById('week-goal-current');
+        if (goalCur) goalCur.textContent = '$0';
+    }
+
+    function animateWeekChange(direction, updateFn) {
+        const grid = document.getElementById('cal-week-grid');
+        if (!grid) { updateFn(); return; }
+        const outClass = direction === 'next' ? 'cal-slide-out-left' : 'cal-slide-out-right';
+        const inClass = direction === 'next' ? 'cal-slide-in-left' : 'cal-slide-in-right';
+        grid.classList.remove('cal-slide-in-left', 'cal-slide-in-right');
+        grid.classList.add(outClass);
+        setTimeout(() => {
+            updateFn();
+            grid.classList.remove(outClass);
+            void grid.offsetWidth;
+            grid.classList.add(inClass);
+            setTimeout(() => grid.classList.remove(inClass), 300);
+        }, 160);
+    }
+
+    document.getElementById('cal-week-prev')?.addEventListener('click', () => {
+        animateWeekChange('prev', () => {
+            weekStart = new Date(weekStart); weekStart.setDate(weekStart.getDate() - 7);
+            const firstMon = getMonday(FIRST_TRADE);
+            if (weekStart < firstMon) weekStart = firstMon;
+            renderWeekView();
+        });
+    });
+    document.getElementById('cal-week-next')?.addEventListener('click', () => {
+        animateWeekChange('next', () => {
+            weekStart = new Date(weekStart); weekStart.setDate(weekStart.getDate() + 7);
+            const todayMon = getMonday(TODAY);
+            if (weekStart > todayMon) weekStart = todayMon;
+            renderWeekView();
+        });
+    });
 
     function getYearPnL(year) {
         const todayKey = dateKey(TODAY);
@@ -1068,6 +1198,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (mode === 'year') {
                 yearViewYear = calYear;
                 showCalPanel('year');
+            } else if (mode === 'week') {
+                weekStart = getMonday(TODAY);
+                showCalPanel('week');
+            } else if (mode === 'all') {
+                showCalPanel('all');
             } else {
                 showCalPanel('month');
             }
