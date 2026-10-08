@@ -1154,6 +1154,35 @@
                                 <div class="cal-grid" id="cal-grid"></div>
                                 </div>
 
+                                <div id="cal-week-view" class="cal-view-panel">
+                                    <div class="cal-nav">
+                                        <button class="cal-nav-btn" id="cal-week-prev"><i class="fa-solid fa-chevron-left"></i></button>
+                                        <span class="cal-month-title" id="cal-week-title">Oct 5 – 9, 2026</span>
+                                        <button class="cal-nav-btn" id="cal-week-next"><i class="fa-solid fa-chevron-right"></i></button>
+                                    </div>
+                                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+                                        <div class="stat-card" style="padding:12px;">
+                                            <div class="stat-label">Week P&amp;L</div>
+                                            <div class="stat-value positive" id="cal-week-total" style="font-size:18px;">+$0.00</div>
+                                        </div>
+                                        <div class="stat-card" style="padding:12px;">
+                                            <div class="stat-label">Weekly goal</div>
+                                            <div class="goal-bar-wrap">
+                                                <div class="goal-bar-bg"><div class="goal-bar-fill" id="week-goal-fill" style="width:0%"></div></div>
+                                                <div class="goal-bar-labels"><span id="week-goal-current">$0</span><span>$1,500</span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="cal-weekdays week-view-labels">
+                                        <div class="cal-weekday">Mon</div>
+                                        <div class="cal-weekday">Tue</div>
+                                        <div class="cal-weekday">Wed</div>
+                                        <div class="cal-weekday">Thu</div>
+                                        <div class="cal-weekday">Fri</div>
+                                    </div>
+                                    <div class="cal-grid week-grid" id="cal-week-grid"></div>
+                                </div>
+
                                 <div id="cal-year-view" class="cal-view-panel">
                                     <div class="cal-nav">
                                         <button class="cal-nav-btn" id="cal-year-prev"><i class="fa-solid fa-chevron-left"></i></button>
