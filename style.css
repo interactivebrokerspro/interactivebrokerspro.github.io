@@ -1,1391 +1,1547 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="light">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Brokers Dashboard</title>
-    <link rel="icon" type="image/png" href="https://i.postimg.cc/BQ3SXy6K/Untitled-(11).png" sizes="96x96" />
-    <link rel="icon" type="image/svg+xml" href="https://i.postimg.cc/BQ3SXy6K/Untitled-(11).png" />
-    <link rel="shortcut icon" href="https://i.postimg.cc/BQ3SXy6K/Untitled-(11).png" />
-    <link rel="apple-touch-icon" href="https://i.postimg.cc/BQ3SXy6K/Untitled-(11).png" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
+/* --- ROOT VARIABLES --- */
+:root {
+    --bg-page: #f0f2f5;
+    --bg-sidebar: #ffffff;
+    --bg-header: #ffffff;
+    --text-primary: #121619;
+    --text-secondary: #656f7d;
+    --text-muted: #8d97a5;
+    --ib-red: #d32f2f;
+    --accent-blue: #0066cc;
+    --accent-blue-hover: #0052a3;
+    --pill-active-bg: #e5f0ff;
+    --green-positive: #0f9d58;
+    --red-negative: #d32f2f;
+    --card-bg: #ffffff;
+    --card-border: #e3e8ee;
+    --card-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    --input-bg: #f5f7fa;
+    --modal-overlay: rgba(0, 0, 0, 0.4);
+    --nav-border: #e3e8ee;
+    --table-header: #f8f9fa;
+    --flash-bg: rgba(255, 235, 59, 0.4);
+    --tt-bg: #fff;
+    --tt-border: #eaeaea;
+    --cal-green: #0f9d58;
+    --cal-red: #d32f2f;
+    --cal-empty: #e8ecf1;
+    --cal-future: #f5f7fa;
+}
 
-    <!-- IBKR STARTUP / LOGIN OVERLAY -->
-    <div id="login-screen" class="login-overlay">
-        <div class="login-card">
-            <div class="login-header">
-                <img src="https://i.postimg.cc/BQ3SXy6K/Untitled-(11).png" alt="Interactive Brokers Logo" class="login-logo">
-                <h2><strong>Interactive</strong>Brokers</h2>
-                <p class="login-subtitle">Trader Workstation & WebTrader Login</p>
-            </div>
-            <form id="login-form">
-                <div class="login-field">
-                    <label for="password-input">Account Sensitive Code</label>
-                    <div class="input-with-icon">
-                        <i class="fa-solid fa-lock"></i>
-                        <input type="password" id="password-input" placeholder="Enter code" required autocomplete="current-password">
-                    </div>
-                </div>
-                <div id="login-error" class="login-error hidden">
-                    <i class="fa-solid fa-circle-exclamation"></i> No account found. Please try again.
-                </div>
-                <button type="submit" id="login-btn" class="login-submit-btn">
-                    <span>Log In</span>
-                    <i class="fa-solid fa-arrow-right"></i>
-                </button>
-            </form>
-            <div class="login-footer">
-                <i class="fa-solid fa-shield-halved"></i> 256-Bit SSL Encrypted Connection
-            </div>
-        </div>
-    </div>
+[data-theme="dark"] {
+    --bg-page: #0b0e11;
+    --bg-sidebar: #151921;
+    --bg-header: #151921;
+    --text-primary: #f0f4f8;
+    --text-secondary: #9cb0c9;
+    --text-muted: #64748b;
+    --pill-active-bg: #22324d;
+    --green-positive: #26a69a;
+    --red-negative: #ef5350;
+    --card-bg: #1c222d;
+    --card-border: #2a3447;
+    --card-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    --input-bg: #222b3c;
+    --modal-overlay: rgba(0, 0, 0, 0.75);
+    --nav-border: #232d3f;
+    --table-header: #12161c;
+    --flash-bg: rgba(255, 235, 59, 0.15);
+    --tt-bg: #151921;
+    --tt-border: #2a3447;
+    --cal-green: #26a69a;
+    --cal-red: #ef5350;
+    --cal-empty: #1a2030;
+    --cal-future: #12161c;
+}
 
-    <div id="p2r-indicator">
-        <i class="fa-solid fa-arrow-rotate-right fa-spin"></i> Refreshing...
-    </div>
+/* --- BASE --- */
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+body { background-color: var(--bg-page); color: var(--text-primary); transition: background-color 0.3s ease; overscroll-behavior-y: none; }
 
-    <div class="app-layout">
-        
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <div class="ib-logo">
-                    <img src="https://i.postimg.cc/BQ3SXy6K/Untitled-(11).png" width="22" height="22" alt="Interactive Brokers" class="custom-logo">
-                    <span class="ib-text"><strong>Interactive</strong>Brokers</span>
-                </div>
-            </div>
-            <nav class="sidebar-nav">
-                <a href="#" class="side-link active view-trigger" data-target="view-home"><i class="fa-solid fa-house"></i> Home</a>
-                <a href="#" class="side-link view-trigger" data-target="view-portfolio"><i class="fa-solid fa-chart-pie"></i> Portfolio</a>
-                <a href="#" class="side-link view-trigger" data-target="view-order-history"><i class="fa-solid fa-clock-rotate-left"></i> Order History</a>
-                <a href="#" class="side-link view-trigger" data-target="view-explore"><i class="fa-solid fa-bolt"></i> Live Screener</a>
-                <div class="sidebar-divider"></div>
-                <a href="#" class="side-link view-trigger" data-target="view-profile"><i class="fa-solid fa-user-shield"></i> Account</a>
-                <a href="#" class="side-link desktop-only" id="side-msg-btn"><i class="fa-regular fa-comment-dots"></i> Messages <span class="side-badge">4</span></a>
-                <div class="sidebar-footer-meta">
-                    <div class="conn-status"><span class="conn-dot"></span> Connected · TWS Gateway</div>
-                    <div class="conn-sub">U1234567 · Paper-Live Bridge</div>
-                </div>
-            </nav>
-        </aside>
+/* Pull to Refresh Indicator */
+#p2r-indicator { position: fixed; top: 0; left: 0; width: 100%; height: 60px; display: flex; align-items: center; justify-content: center; gap: 10px; background: var(--bg-header); color: var(--text-primary); font-weight: 600; font-size: 14px; z-index: 100; transform: translateY(-100%); transition: transform 0.2s ease-out; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
 
-        <main class="main-content">
-            
-            <header class="top-header">
-                <div class="mobile-logo-container">
-                    <div class="profile-avatar view-trigger" data-target="view-profile" style="cursor:pointer;"><i class="fa-solid fa-user"></i></div>
-                    <div class="ib-logo">
-                        <img src="https://i.postimg.cc/BQ3SXy6K/Untitled-(11).png" width="22" height="22" alt="Interactive Brokers" class="custom-logo">
-                        <span class="ib-text"><strong>Interactive</strong>Brokers</span>
-                    </div>
-                </div>
+/* --- LOGIN SCREEN --- */
+.login-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #0b0e11;
+    background-image: radial-gradient(circle at 50% 35%, #17202e 0%, #0b0e11 75%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    padding: 20px;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
 
-                <div class="desktop-search">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" placeholder="Search symbols, news, or tools...">
-                </div>
+.login-overlay.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
 
-                <div class="header-actions">
-                    <button id="dark-mode-toggle" class="icon-btn" title="Toggle Theme"><i class="fa-regular fa-moon"></i></button>
-                    <div class="msg-wrapper">
-                        <button id="msg-btn" class="icon-btn" title="Messages"><i class="fa-regular fa-comment-dots"></i><span class="notif-badge msg-badge">4</span></button>
-                        <div id="msg-dropdown" class="notif-dropdown msg-dropdown hidden">
-                            <div class="notif-header">Secure Messages <span class="notif-count">4 unread</span></div>
-                            <div class="msg-item unread"><div class="msg-from">IBKR Compliance</div><div class="msg-preview">Pattern Day Trader status: Not applicable (margin acct)…</div><div class="msg-time">Today 09:12</div></div>
-                            <div class="msg-item unread"><div class="msg-from">Trade Confirmations</div><div class="msg-preview">FILL 2026-10-06 MES short 2 @ 5824.25 — confirmed</div><div class="msg-time">Yesterday</div></div>
-                            <div class="msg-item unread"><div class="msg-from">Corporate Actions</div><div class="msg-preview">AAPL dividend $0.25 payable 2026-11-14</div><div class="msg-time">Oct 3</div></div>
-                            <div class="msg-item unread"><div class="msg-from">Risk Systems</div><div class="msg-preview">Daily loss limit set to 2.0% NLV — active</div><div class="msg-time">Oct 1</div></div>
-                            <div class="msg-item"><div class="msg-from">Account Services</div><div class="msg-preview">Statement for Sep 2026 is available</div><div class="msg-time">Sep 30</div></div>
-                            <div class="msg-footer">View message center →</div>
-                        </div>
-                    </div>
-                    
-                    <div class="notif-wrapper">
-                        <button id="notif-btn" class="icon-btn" title="Notifications"><i class="fa-regular fa-bell"></i><span class="notif-badge">18</span></button>
-                        <div id="notif-dropdown" class="notif-dropdown hidden" style="max-height: 400px; overflow-y: auto;">
-                            <div class="notif-header">Alerts &amp; Activity <span class="notif-count">18</span></div>
-                            <div class="notif-item"><i class="fa-solid fa-check-circle" style="color:var(--green-positive)"></i><div><strong>FILL</strong> MES short 2 @ 5824.25<span class="notif-meta">10:47:12 ET · +$1,225.90</span></div></div>
-                            <div class="notif-item"><i class="fa-solid fa-check-circle" style="color:var(--green-positive)"></i><div><strong>FILL</strong> MNQ long 3 @ 20148.50<span class="notif-meta">10/06 09:41 ET · +$14,453.23</span></div></div>
-                            <div class="notif-item"><i class="fa-solid fa-shield-halved" style="color:var(--accent-blue)"></i><div>Login from Riverside, CA (IPv4)<span class="notif-meta">Today 08:02 ET · TWS</span></div></div>
-                            <div class="notif-item"><i class="fa-solid fa-gauge-high" style="color:#f59e0b"></i><div>Risk: daily loss utilization 0.4% of 2.0% cap<span class="notif-meta">Live</span></div></div>
-                            <div class="notif-item"><i class="fa-solid fa-layer-group" style="color:var(--accent-blue)"></i><div>L2 reconnect — ARCA/NASDAQ depth OK<span class="notif-meta">09:30:01 ET</span></div></div>
-                            <div class="notif-item"><i class="fa-solid fa-ban" style="color:var(--red-negative)"></i><div><strong>REJECT</strong> BUY 5000 GME — buying power<span class="notif-meta">Sep 24 · Order rejected</span></div></div>
-                            <div class="notif-item"><i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b"></i><div>FOMC window — volatility filter ON<span class="notif-meta">Sep 29</span></div></div>
-                            <div class="notif-item"><i class="fa-solid fa-file-invoice" style="color:var(--text-secondary)"></i><div>Sep 2026 activity statement ready<span class="notif-meta">Statements</span></div></div>
-                            <div class="notif-item"><i class="fa-solid fa-newspaper" style="color:var(--text-secondary)"></i><div>NEWS Fed holds rates — CME futures reaction<span class="notif-meta">Reuters</span></div></div>
-                            <div class="notif-item"><i class="fa-solid fa-arrow-trend-up" style="color:var(--green-positive)"></i><div>NVDA +2.4% pre-market / unusual volume<span class="notif-meta">Scanner</span></div></div>
-                            <div class="notif-item"><i class="fa-solid fa-coins" style="color:var(--green-positive)"></i><div>Dividend credited AAPL $432.18<span class="notif-meta">Cash</span></div></div>
-                            <div class="notif-item"><i class="fa-solid fa-clock" style="color:var(--accent-blue)"></i><div>MES/MNQ flat rule — flatten by 15:55 ET<span class="notif-meta">Risk rule</span></div></div>
-                            <div class="notif-item"><i class="fa-solid fa-bolt" style="color:var(--accent-blue)"></i><div>SPY 450C expired OTM — no assignment<span class="notif-meta">Options</span></div></div>
-                            <div class="notif-item"><i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b"></i><div>Maint. margin 82% — buffer OK<span class="notif-meta">Margin</span></div></div>
-                            <div class="notif-item"><i class="fa-solid fa-server" style="color:var(--text-secondary)"></i><div>Gateway heartbeat 42ms · Chicago<span class="notif-meta">Infra</span></div></div>
-                            <div class="notif-item"><i class="fa-solid fa-check-circle" style="color:var(--green-positive)"></i><div>BOUGHT 100 TSLA @ MKT 198.52<span class="notif-meta">Prior session</span></div></div>
-                            <div class="notif-item"><i class="fa-solid fa-shield-halved" style="color:var(--accent-blue)"></i><div>Shariah screen refresh complete (weekend)<span class="notif-meta">Compliance</span></div></div>
-                            <div class="notif-item"><i class="fa-solid fa-chart-line" style="color:var(--green-positive)"></i><div>Win rate 74.2% · 90d trailing<span class="notif-meta">Stats</span></div></div>
-                        </div>
-                    </div>
+.login-card {
+    background-color: #151921;
+    border: 1px solid #2a3447;
+    border-radius: 18px;
+    padding: 40px 32px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+    color: #f0f4f8;
+    text-align: center;
+    animation: loginFadeUp 0.4s ease-out;
+}
 
-                    <div class="profile-avatar desktop-avatar view-trigger" data-target="view-profile" style="cursor:pointer;"><i class="fa-solid fa-user"></i></div>
-                </div>
-            </header>
+@keyframes loginFadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 
-            <div class="status-ticker" id="status-ticker">
-                <div class="ticker-track">
-                    <span>MES 5824.25 <em class="pos">+0.18%</em></span>
-                    <span>MNQ 20148.50 <em class="pos">+0.32%</em></span>
-                    <span>ES 5824.00 <em class="pos">+10.50</em></span>
-                    <span>NQ 20148.00 <em class="pos">+64.25</em></span>
-                    <span>SPY 445.12 <em class="pos">+0.75%</em></span>
-                    <span>QQQ 370.10 <em class="pos">+0.95%</em></span>
-                    <span>VIX 14.82 <em class="neg">-2.1%</em></span>
-                    <span>DXY 104.22 <em class="pos">+0.12%</em></span>
-                    <span>NLV $67,490.78</span>
-                    <span>BP $214,820</span>
-                    <span class="pos">GATEWAY OK · 42ms</span>
-                </div>
-            </div>
+.login-header {
+    margin-bottom: 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
 
-            <div class="views-container">
-                
-                <section id="view-home" class="tab-view active">
-                    
-                    <div class="dashboard-grid">
-                        
-                        <div class="col-left">
-                            <div class="dashboard-section-header">
-                                <div class="title-tabs">
-                                    <span class="title-tab active">Value</span>
-                                    <span class="title-divider">|</span>
-                                    <span class="title-tab">Performance</span>
-                                </div>
-                                <button class="info-btn" title="Information"><i class="fa-solid fa-circle-info"></i></button>
-                            </div>
+.login-logo {
+    width: 52px;
+    height: 52px;
+    margin-bottom: 14px;
+    object-fit: contain;
+}
 
-                            <div class="balance-widget">
-                                <div class="balance-header">
-                                    <h1 id="balance-value" class="balance-amount" title="Double click to edit">$67,490<span class="cents">.78</span></h1>
-                                </div>
-                                <div class="balance-change positive" id="change-container">
-                                    <span id="change-value">+$17,340.21</span>
-                                    (<span id="change-percent">+34.58%</span>)
-                                    <span class="change-period">this month</span>
-                                </div>
-                            </div>
+.login-header h2 {
+    font-size: 22px;
+    font-weight: 400;
+    color: #ffffff;
+    letter-spacing: -0.3px;
+}
 
-                            <div class="chart-widget card">
-                                <div class="chart-container">
-                                    <canvas id="portfolioChart"></canvas>
-                                </div>
-                                <div class="time-range-pills">
-                                    <button class="pill" data-range="1W">1W</button>
-                                    <button class="pill" data-range="MTD">MTD</button>
-                                    <button class="pill active" data-range="1M">1M</button>
-                                    <button class="pill" data-range="3M">3M</button>
-                                    <button class="pill" data-range="YTD">YTD</button>
-                                    <button class="pill" data-range="1Y">1Y</button>
-                                    <button class="pill" data-range="ALL">All</button>
-                                </div>
-                            </div>
+.login-header h2 strong {
+    font-weight: 700;
+    color: #d32f2f;
+}
 
-                            <!-- TSLA Level 2 Market Depth (Visible on Mobile & Desktop) -->
-                            <div class="l2-widget card">
-                                <div class="widget-title">
-                                    <h4><i class="fa-solid fa-layer-group"></i> TSLA Level 2 Market Depth</h4>
-                                    <span class="live-dot">LIVE</span>
-                                </div>
-                                <div class="l2-tables">
-                                    <div class="l2-col">
-                                        <div class="l2-header"><span>Bid Size</span><span>Bid Price</span></div>
-                                        <div class="l2-row"><span class="size-val">400</span><span class="buy-price">198.45</span></div>
-                                        <div class="l2-row"><span class="size-val">1200</span><span class="buy-price">198.40</span></div>
-                                        <div class="l2-row"><span class="size-val">50</span><span class="buy-price">198.38</span></div>
-                                        <div class="l2-row"><span class="size-val">850</span><span class="buy-price">198.30</span></div>
-                                        <div class="l2-row"><span class="size-val">300</span><span class="buy-price">198.25</span></div>
-                                    </div>
-                                    <div class="l2-col">
-                                        <div class="l2-header"><span>Ask Price</span><span>Ask Size</span></div>
-                                        <div class="l2-row"><span class="sell-price">198.50</span><span class="size-val">100</span></div>
-                                        <div class="l2-row"><span class="sell-price">198.53</span><span class="size-val">350</span></div>
-                                        <div class="l2-row"><span class="sell-price">198.60</span><span class="size-val">900</span></div>
-                                        <div class="l2-row"><span class="sell-price">198.65</span><span class="size-val">200</span></div>
-                                        <div class="l2-row"><span class="sell-price">198.70</span><span class="size-val">550</span></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+.login-subtitle {
+    font-size: 13px;
+    color: #9cb0c9;
+    margin-top: 4px;
+}
 
-                        <div class="col-right">
-                            
-                            <div class="quick-trade-widget card desktop-only">
-                                <h4>Order Entry</h4>
-                                <div class="trade-inputs">
-                                    <input type="text" value="TSLA" class="ticker-input">
-                                    <input type="number" value="100" class="qty-input">
-                                </div>
-                                <div class="trade-action-btns">
-                                    <button class="buy-btn">BUY MKT</button>
-                                    <button class="sell-btn">SELL MKT</button>
-                                </div>
-                            </div>
+.login-field {
+    text-align: left;
+    margin-bottom: 18px;
+}
 
-                            <div class="news-card card" id="news-card">
-                                <div class="news-body">
-                                    <h4 id="news-headline" class="news-headline">TSLA ALERT: Levi & Korsinsky Files Securities Fraud Class Action Against Tesl...</h4>
-                                    <p id="news-meta" class="news-meta">Today 10:47 AM - Reuters News</p>
-                                </div>
-                                <div class="news-action"><i class="fa-solid fa-circle-info"></i></div>
-                            </div>
-                            
-                            <div class="carousel-indicators">
-                                <span class="dot active"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
-                            </div>
+.login-field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #9cb0c9;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
 
-                            <!-- Time & Sales + session util: directly under TSLA alert (mobile + desktop) -->
-                            <div class="card home-tas">
-                                <div class="widget-title"><h4><i class="fa-solid fa-stream"></i> Time &amp; Sales · TSLA</h4><span class="live-dot">TAPE</span></div>
-                                <div class="tas-list" id="home-tas">
-                                    <div class="tas-row buy"><span>10:47:21</span><span>198.52</span><span>100</span></div>
-                                    <div class="tas-row sell"><span>10:47:20</span><span>198.51</span><span>250</span></div>
-                                    <div class="tas-row buy"><span>10:47:19</span><span>198.53</span><span>500</span></div>
-                                    <div class="tas-row buy"><span>10:47:18</span><span>198.50</span><span>75</span></div>
-                                    <div class="tas-row sell"><span>10:47:17</span><span>198.49</span><span>300</span></div>
-                                    <div class="tas-row buy"><span>10:47:16</span><span>198.52</span><span>1,200</span></div>
-                                </div>
-                            </div>
-                            <div class="card util-strip">
-                                <div class="util-row"><span>Session</span><span class="mono">RTH · ET</span></div>
-                                <div class="util-row"><span>Open orders</span><span class="mono">0</span></div>
-                                <div class="util-row"><span>Fills today</span><span class="mono">2</span></div>
-                                <div class="util-row"><span>Realized MTD</span><span class="mono pos">+$17,340.21</span></div>
-                            </div>
+.input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
 
-                            <!-- Active Movers -->
-                            <div class="movers-widget card">
-                                <h4><i class="fa-solid fa-fire-flame-curved"></i> Active Movers</h4>
-                                <ul class="movers-list">
-                                    <li><span class="ticker">NVDA</span><span class="price">450.21</span><span class="change positive">+2.41%</span></li>
-                                    <li><span class="ticker">AAPL</span><span class="price">182.44</span><span class="change negative">-0.82%</span></li>
-                                    <li><span class="ticker">AMD</span><span class="price">112.50</span><span class="change positive">+1.25%</span></li>
-                                    <li><span class="ticker">QQQ</span><span class="price">370.10</span><span class="change positive">+0.95%</span></li>
-                                    <li><span class="ticker">SPY</span><span class="price">445.12</span><span class="change positive">+0.75%</span></li>
-                                    <li><span class="ticker">MES</span><span class="price">5824.25</span><span class="change positive">+0.18%</span></li>
-                                    <li><span class="ticker">MNQ</span><span class="price">20148.50</span><span class="change positive">+0.32%</span></li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
+.input-with-icon i {
+    position: absolute;
+    left: 14px;
+    color: #64748b;
+    font-size: 15px;
+}
 
-                </section>
+.input-with-icon input {
+    width: 100%;
+    background-color: #222b3c;
+    border: 1px solid #2a3447;
+    border-radius: 10px;
+    padding: 12px 14px 12px 42px;
+    color: #ffffff;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
 
-                <section id="view-profile" class="tab-view">
-                    <div class="tt-profile-container">
-                        <div class="tt-profile-header">
-                            <div class="tt-avatar-large">
-                                <img src="https://i.postimg.cc/GhdYPX2K/IMG-1817.jpg" alt="kd" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
-                            </div>
-                            <h2 class="tt-name">Nabil Khondaker</h2>
-                            <p class="tt-username">@ind7kuh</p>
-                        </div>
-                        
-                        <div class="tt-stats">
-                            <div class="tt-stat">
-                                <span class="tt-val">$67.5K</span>
-                                <span class="tt-label">Net Profit</span>
-                            </div>
-                            <div class="tt-stat">
-                                <span class="tt-val">894</span>
-                                <span class="tt-label">Followers</span>
-                            </div>
-                            <div class="tt-stat">
-                                <span class="tt-val">14</span>
-                                <span class="tt-label">Following</span>
-                            </div>
-                        </div>
-                        
-                        <div class="tt-bio">
-                            16 year old trader
-                            <br>yea i make more money den u
-                            <br><b>⚲</b> Riverside, CA
-                        </div>
+.input-with-icon input:focus {
+    border-color: #0066cc;
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.25);
+}
 
-                        <div class="account-util-grid">
-                            <div class="card util-panel">
-                                <h4><i class="fa-solid fa-building-columns"></i> Account</h4>
-                                <div class="util-row"><span>Account ID</span><span class="mono">U1234567</span></div>
-                                <div class="util-row"><span>Type</span><span>Margin · Individual</span></div>
-                                <div class="util-row"><span>Base Currency</span><span>USD</span></div>
-                                <div class="util-row"><span>NLV</span><span class="mono pos">$67,490.78</span></div>
-                                <div class="util-row"><span>Cash</span><span class="mono">$41,208.12</span></div>
-                                <div class="util-row"><span>Buying Power</span><span class="mono">$214,820.40</span></div>
-                                <div class="util-row"><span>Maint. Margin</span><span class="mono">$12,440.00</span></div>
-                                <div class="util-row"><span>Excess Liq.</span><span class="mono">$89,412.00</span></div>
-                            </div>
-                            <div class="card util-panel">
-                                <h4><i class="fa-solid fa-shield-halved"></i> Risk &amp; Compliance</h4>
-                                <div class="util-row"><span>Max daily loss</span><span>2.0% NLV</span></div>
-                                <div class="util-row"><span>Open risk cap</span><span>1.5% NLV</span></div>
-                                <div class="util-row"><span>Per-trade risk</span><span>0.75% NLV</span></div>
-                                <div class="util-row"><span>Futures overnight</span><span class="neg">Blocked</span></div>
-                                <div class="util-row"><span>Shariah screen</span><span class="pos">Active</span></div>
-                                <div class="util-row"><span>PDT flag</span><span>N/A (margin)</span></div>
-                                <div class="util-row"><span>Flatten deadline</span><span class="mono">15:55 ET</span></div>
-                            </div>
-                            <div class="card util-panel">
-                                <h4><i class="fa-solid fa-briefcase"></i> Open Positions</h4>
-                                <div class="pos-empty">No open positions · flat</div>
-                                <div class="util-row muted"><span>Last flat</span><span class="mono">2026-10-07 10:47 ET</span></div>
-                            </div>
-                            <div class="card util-panel">
-                                <h4><i class="fa-solid fa-network-wired"></i> Connectivity</h4>
-                                <div class="util-row"><span>Gateway</span><span class="pos">Connected</span></div>
-                                <div class="util-row"><span>Latency</span><span class="mono">42 ms</span></div>
-                                <div class="util-row"><span>Market data</span><span>NASDAQ TotalView · CME</span></div>
-                                <div class="util-row"><span>Routing</span><span>SMART / ISLAND</span></div>
-                            </div>
-                        </div>
-                        <div class="tt-graphs-scroll">
-                            <div class="graph-card">
-                                <h4>Order Flow Imbalance &amp; RSI</h4>
-                                <div class="complex-chart-container">
-                                    <canvas id="complexChart1"></canvas>
-                                </div>
-                            </div>
-                            <div class="graph-card">
-                                <h4>Monte Carlo Risk Dispersion</h4>
-                                <div class="complex-chart-container">
-                                    <canvas id="complexChart2"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
+.login-error {
+    background-color: rgba(211, 47, 47, 0.15);
+    border: 1px solid rgba(211, 47, 47, 0.4);
+    color: #ef5350;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
 
-                <section id="view-order-history" class="tab-view">
-                    <div class="card" style="margin-top: 20px;">
-                        <div class="widget-title" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--nav-border); padding-bottom: 12px; margin-bottom: 12px;">
-                            <h4><i class="fa-solid fa-clock-rotate-left"></i> Order History (Jun 05 – Oct 06, 2026)</h4>
-                            <span style="font-weight: 600; font-size: 15px; color: var(--green-positive);">Total Net Profit: +$15,661.08</span>
-                        </div>
-                        
-                        <div style="overflow-x: auto;">
-                            <table class="order-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
-                                <thead>
-                                    <tr style="background-color: var(--table-header); color: var(--text-muted); border-bottom: 1px solid var(--card-border);">
-                                        <th style="padding: 12px; font-weight: 600;">Date</th>
-                                        <th style="padding: 12px; font-weight: 600;">Symbol</th>
-                                        <th style="padding: 12px; font-weight: 600;">Type</th>
-                                        <th style="padding: 12px; font-weight: 600;">Qty</th>
-                                        <th style="padding: 12px; font-weight: 600;">Avg Price</th>
-                                        <th style="padding: 12px; font-weight: 600; text-align: right;">Realized P&L</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Oct 06</td>
-                                        <td style="padding:10px;font-weight:600;">MU</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">+0.57R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$3,273.23</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Oct 05</td>
-                                        <td style="padding:10px;font-weight:600;">QQQ</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">+0.84R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$2,008.63</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Oct 02</td>
-                                        <td style="padding:10px;font-weight:600;">MU</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;">SHORT</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">+1.13R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$2,194.64</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Oct 01</td>
-                                        <td style="padding:10px;font-weight:600;">QQQ</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;">SHORT</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">–0.95R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$1,912.19</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Sep 30</td>
-                                        <td style="padding:10px;font-weight:600;">AMD</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">–0.71R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$2,376.34</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Sep 29</td>
-                                        <td style="padding:10px;font-weight:600;">MES</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;">SHORT</td>
-                                        <td style="padding:10px;">2</td>
-                                        <td style="padding:10px;">+2.12R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$2,917.45</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Sep 28</td>
-                                        <td style="padding:10px;font-weight:600;">MES</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">3</td>
-                                        <td style="padding:10px;">+1.17R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$7,043.32</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Sep 25</td>
-                                        <td style="padding:10px;font-weight:600;">EQUITY</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">+1.87R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$2,436.82</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Sep 24</td>
-                                        <td style="padding:10px;font-weight:600;">MNQ</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;">SHORT</td>
-                                        <td style="padding:10px;">4</td>
-                                        <td style="padding:10px;">–0.51R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$735.35</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Sep 23</td>
-                                        <td style="padding:10px;font-weight:600;">IREN</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;">SHORT</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">–0.31R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$941.34</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Sep 22</td>
-                                        <td style="padding:10px;font-weight:600;">MNQ</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;">SHORT</td>
-                                        <td style="padding:10px;">4</td>
-                                        <td style="padding:10px;">+0.62R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$4,502.88</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Sep 21</td>
-                                        <td style="padding:10px;font-weight:600;">MES</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;">SHORT</td>
-                                        <td style="padding:10px;">2</td>
-                                        <td style="padding:10px;">+1.88R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$4,385.53</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Sep 18</td>
-                                        <td style="padding:10px;font-weight:600;">QQQ</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">–0.35R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$1,774.87</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Sep 17</td>
-                                        <td style="padding:10px;font-weight:600;">MES</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">2</td>
-                                        <td style="padding:10px;">–0.33R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$1,505.72</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Sep 16</td>
-                                        <td style="padding:10px;font-weight:600;">IREN</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">+1.90R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$2,640.31</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Sep 15</td>
-                                        <td style="padding:10px;font-weight:600;">MNQ</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;">SHORT</td>
-                                        <td style="padding:10px;">2</td>
-                                        <td style="padding:10px;">–0.35R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$3,683.63</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Sep 14</td>
-                                        <td style="padding:10px;font-weight:600;">MU</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;">SHORT</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">+0.41R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$2,254.56</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Sep 11</td>
-                                        <td style="padding:10px;font-weight:600;">QQQ</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">–0.57R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$1,851.77</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Sep 10</td>
-                                        <td style="padding:10px;font-weight:600;">QQQ</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">–0.85R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$2,873.44</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Sep 09</td>
-                                        <td style="padding:10px;font-weight:600;">AAPL</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;">SHORT</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">–0.41R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$1,971.24</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Sep 08</td>
-                                        <td style="padding:10px;font-weight:600;">QQQ</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">–0.39R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$2,395.56</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Sep 07</td>
-                                        <td style="padding:10px;font-weight:600;">MNQ</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">4</td>
-                                        <td style="padding:10px;">–0.53R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$400.29</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Sep 04</td>
-                                        <td style="padding:10px;font-weight:600;">NVDA</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">+1.99R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$754.02</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Sep 03</td>
-                                        <td style="padding:10px;font-weight:600;">IREN</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;">SHORT</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">–0.67R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$1,281.89</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Sep 02</td>
-                                        <td style="padding:10px;font-weight:600;">MES</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">2</td>
-                                        <td style="padding:10px;">+1.80R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$1,429.39</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Sep 01</td>
-                                        <td style="padding:10px;font-weight:600;">TSLA</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">+1.54R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$3,668.97</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Aug 31</td>
-                                        <td style="padding:10px;font-weight:600;">IREN</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">+0.94R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$4,168.31</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Aug 28</td>
-                                        <td style="padding:10px;font-weight:600;">MNQ</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;">SHORT</td>
-                                        <td style="padding:10px;">4</td>
-                                        <td style="padding:10px;">–0.31R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$1,833.92</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Aug 27</td>
-                                        <td style="padding:10px;font-weight:600;">NVDA</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">–0.66R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$2,469.03</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Aug 26</td>
-                                        <td style="padding:10px;font-weight:600;">SPY</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">–0.80R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$2,856.28</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Aug 25</td>
-                                        <td style="padding:10px;font-weight:600;">MES</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">2</td>
-                                        <td style="padding:10px;">+1.24R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$5,678.84</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Aug 24</td>
-                                        <td style="padding:10px;font-weight:600;">NVDA</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">+0.63R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$5,677.60</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Aug 21</td>
-                                        <td style="padding:10px;font-weight:600;">MARA</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">+1.29R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$791.47</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Aug 20</td>
-                                        <td style="padding:10px;font-weight:600;">MNQ</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">4</td>
-                                        <td style="padding:10px;">+1.26R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$4,932.32</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Aug 19</td>
-                                        <td style="padding:10px;font-weight:600;">IREN</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;">SHORT</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">–0.83R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$523.88</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Aug 18</td>
-                                        <td style="padding:10px;font-weight:600;">MARA</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">–0.34R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$682.49</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Aug 17</td>
-                                        <td style="padding:10px;font-weight:600;">MARA</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;">SHORT</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">+1.61R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$3,877.44</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Aug 14</td>
-                                        <td style="padding:10px;font-weight:600;">MNQ</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">2</td>
-                                        <td style="padding:10px;">+1.48R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$1,314.54</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Aug 13</td>
-                                        <td style="padding:10px;font-weight:600;">TSLA</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;">SHORT</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">–0.41R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$1,353.30</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Aug 12</td>
-                                        <td style="padding:10px;font-weight:600;">MNQ</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;">SHORT</td>
-                                        <td style="padding:10px;">4</td>
-                                        <td style="padding:10px;">+1.46R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$2,435.57</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Aug 11</td>
-                                        <td style="padding:10px;font-weight:600;">NVDA</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">–0.30R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$2,512.97</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Aug 10</td>
-                                        <td style="padding:10px;font-weight:600;">AMD</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">–0.37R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$2,881.68</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Aug 07</td>
-                                        <td style="padding:10px;font-weight:600;">EQUITY</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">–0.48R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$801.95</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Aug 06</td>
-                                        <td style="padding:10px;font-weight:600;">AAPL</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">+1.30R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$5,311.82</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Aug 05</td>
-                                        <td style="padding:10px;font-weight:600;">MNQ</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">3</td>
-                                        <td style="padding:10px;">+1.89R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$2,389.38</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Aug 04</td>
-                                        <td style="padding:10px;font-weight:600;">MARA</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">–0.72R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$1,566.83</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Aug 03</td>
-                                        <td style="padding:10px;font-weight:600;">EQUITY</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">–0.96R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$944.77</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jul 31</td>
-                                        <td style="padding:10px;font-weight:600;">MES</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">3</td>
-                                        <td style="padding:10px;">+1.29R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$5,310.58</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jul 30</td>
-                                        <td style="padding:10px;font-weight:600;">MNQ</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">4</td>
-                                        <td style="padding:10px;">–0.55R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$1,850.40</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jul 29</td>
-                                        <td style="padding:10px;font-weight:600;">MNQ</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;">SHORT</td>
-                                        <td style="padding:10px;">2</td>
-                                        <td style="padding:10px;">+1.64R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$1,384.44</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jul 28</td>
-                                        <td style="padding:10px;font-weight:600;">AMD</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">–0.81R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$948.20</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jul 27</td>
-                                        <td style="padding:10px;font-weight:600;">MES</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">1</td>
-                                        <td style="padding:10px;">+1.35R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$2,371.91</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jul 24</td>
-                                        <td style="padding:10px;font-weight:600;">AAPL</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;">SHORT</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">–0.77R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$1,350.55</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jul 23</td>
-                                        <td style="padding:10px;font-weight:600;">MU</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">–0.44R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$613.82</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jul 22</td>
-                                        <td style="padding:10px;font-weight:600;">TSLA</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;">SHORT</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">+1.82R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$1,881.30</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jul 21</td>
-                                        <td style="padding:10px;font-weight:600;">MARA</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">+1.33R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$1,170.97</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jul 20</td>
-                                        <td style="padding:10px;font-weight:600;">MNQ</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;">SHORT</td>
-                                        <td style="padding:10px;">3</td>
-                                        <td style="padding:10px;">+2.09R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$4,037.24</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jul 17</td>
-                                        <td style="padding:10px;font-weight:600;">AAPL</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">–0.71R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$2,383.20</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jul 16</td>
-                                        <td style="padding:10px;font-weight:600;">TSLA</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;">SHORT</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">–0.57R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$2,243.14</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jul 15</td>
-                                        <td style="padding:10px;font-weight:600;">MES</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">1</td>
-                                        <td style="padding:10px;">–0.84R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$1,705.53</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jul 14</td>
-                                        <td style="padding:10px;font-weight:600;">MNQ</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">4</td>
-                                        <td style="padding:10px;">+2.10R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$3,514.17</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jul 13</td>
-                                        <td style="padding:10px;font-weight:600;">MES</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">2</td>
-                                        <td style="padding:10px;">–0.41R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$3,474.91</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jul 10</td>
-                                        <td style="padding:10px;font-weight:600;">AAPL</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;">SHORT</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">–0.55R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$2,125.04</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jul 09</td>
-                                        <td style="padding:10px;font-weight:600;">IREN</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">+1.14R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$1,921.24</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jul 08</td>
-                                        <td style="padding:10px;font-weight:600;">MARA</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">+1.53R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$2,519.22</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jul 07</td>
-                                        <td style="padding:10px;font-weight:600;">MNQ</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;">SHORT</td>
-                                        <td style="padding:10px;">4</td>
-                                        <td style="padding:10px;">–0.75R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$1,575.76</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jul 06</td>
-                                        <td style="padding:10px;font-weight:600;">MU</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">+1.29R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$2,813.83</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jul 03</td>
-                                        <td style="padding:10px;font-weight:600;">QQQ</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">+1.96R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$1,798.90</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jul 02</td>
-                                        <td style="padding:10px;font-weight:600;">NVDA</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">–0.70R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$535.55</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jul 01</td>
-                                        <td style="padding:10px;font-weight:600;">MARA</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">+0.85R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$4,556.56</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jun 30</td>
-                                        <td style="padding:10px;font-weight:600;">AAPL</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">+1.30R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$5,311.82</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jun 29</td>
-                                        <td style="padding:10px;font-weight:600;">AMD</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">–0.87R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$1,426.08</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jun 26</td>
-                                        <td style="padding:10px;font-weight:600;">TSLA</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">+1.74R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$1,921.24</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jun 25</td>
-                                        <td style="padding:10px;font-weight:600;">MU</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">+0.61R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$2,254.56</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jun 24</td>
-                                        <td style="padding:10px;font-weight:600;">MNQ</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;">SHORT</td>
-                                        <td style="padding:10px;">3</td>
-                                        <td style="padding:10px;">+1.13R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$3,018.56</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jun 23</td>
-                                        <td style="padding:10px;font-weight:600;">MARA</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">–0.94R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$2,879.62</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jun 22</td>
-                                        <td style="padding:10px;font-weight:600;">MNQ</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;">SHORT</td>
-                                        <td style="padding:10px;">4</td>
-                                        <td style="padding:10px;">+1.94R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$897.58</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jun 19</td>
-                                        <td style="padding:10px;font-weight:600;">AAPL</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">+2.02R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$3,653.99</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jun 18</td>
-                                        <td style="padding:10px;font-weight:600;">MNQ</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;">SHORT</td>
-                                        <td style="padding:10px;">2</td>
-                                        <td style="padding:10px;">–0.99R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$1,557.91</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jun 17</td>
-                                        <td style="padding:10px;font-weight:600;">MES</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">2</td>
-                                        <td style="padding:10px;">–0.67R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$670.81</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jun 16</td>
-                                        <td style="padding:10px;font-weight:600;">SPY</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;">SHORT</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">+1.31R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$4,314.37</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jun 15</td>
-                                        <td style="padding:10px;font-weight:600;">MES</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">3</td>
-                                        <td style="padding:10px;">–0.50R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$1,091.70</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jun 12</td>
-                                        <td style="padding:10px;font-weight:600;">AAPL</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">–0.93R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$1,224.22</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jun 11</td>
-                                        <td style="padding:10px;font-weight:600;">EQUITY</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">+0.99R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$3,275.73</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jun 10</td>
-                                        <td style="padding:10px;font-weight:600;">MES</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;">SHORT</td>
-                                        <td style="padding:10px;">2</td>
-                                        <td style="padding:10px;">–0.93R</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;text-align:right;">–$4,581.71</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jun 09</td>
-                                        <td style="padding:10px;font-weight:600;">MU</td>
-                                        <td style="padding:10px;color:var(--red-negative);font-weight:600;">SHORT</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">+0.53R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$2,194.64</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jun 08</td>
-                                        <td style="padding:10px;font-weight:600;">MES</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">1</td>
-                                        <td style="padding:10px;">+1.35R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$4,019.76</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid var(--card-border);">
-                                        <td style="padding:10px;color:var(--text-secondary);">Jun 05</td>
-                                        <td style="padding:10px;font-weight:600;">QQQ</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;">LONG</td>
-                                        <td style="padding:10px;">—</td>
-                                        <td style="padding:10px;">+1.00R</td>
-                                        <td style="padding:10px;color:var(--green-positive);font-weight:600;text-align:right;">+$1,529.26</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </section>
+.login-error.hidden {
+    display: none;
+}
 
-                <section id="view-portfolio" class="tab-view">
-                    <div class="portfolio-page">
-                        <div class="portfolio-left">
-                            <div class="portfolio-header-stats">
-                                <div class="stat-card">
-                                    <div class="stat-label"><i class="fa-solid fa-wallet"></i> Current NLV</div>
-                                    <div class="stat-value">$67,490.78</div>
-                                    <div class="stat-sub">Started ~$50,000</div>
-                                </div>
-                                <div class="stat-card">
-                                    <div class="stat-label"><i class="fa-solid fa-arrow-trend-up"></i> Net Increase</div>
-                                    <div class="stat-value positive">+$15,661.08</div>
-                                    <div class="stat-sub">MTD performance</div>
-                                </div>
-                                <div class="stat-card">
-                                    <div class="stat-label"><i class="fa-solid fa-calendar-days"></i> Period</div>
-                                    <div class="stat-value" style="font-size:16px;">~4 months</div>
-                                    <div class="stat-sub">~84 trading days</div>
-                                </div>
-                                <div class="stat-card">
-                                    <div class="stat-label"><i class="fa-solid fa-chart-line"></i> Max Drawdown</div>
-                                    <div class="stat-value negative">–4.8%</div>
-                                    <div class="stat-sub">Peak-to-trough</div>
-                                </div>
-                            </div>
-                            <div class="card" style="padding:16px;">
-                                <div class="cal-range-pills">
-                                    <button class="cal-range-pill" data-mode="week">Week</button>
-                                    <button class="cal-range-pill active" data-mode="month">Month</button>
-                                    <button class="cal-range-pill" data-mode="year">Year</button>
-                                    <button class="cal-range-pill" data-mode="all">All time</button>
-                                </div>
-                                <div id="cal-month-view" class="cal-view-panel active">
-                                    <div class="cal-nav">
-                                    <button class="cal-nav-btn" id="cal-prev"><i class="fa-solid fa-chevron-left"></i></button>
-                                    <span class="cal-month-title" id="cal-month-title">October 2026</span>
-                                    <button class="cal-nav-btn" id="cal-next"><i class="fa-solid fa-chevron-right"></i></button>
-                                </div>
-                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
-                                    <div class="stat-card" style="padding:12px;">
-                                        <div class="stat-label">Total P&amp;L</div>
-                                        <div class="stat-value positive" id="cal-total-pnl" style="font-size:18px;">+$0.00</div>
-                                    </div>
-                                    <div class="stat-card" style="padding:12px;">
-                                        <div class="stat-label">Monthly goal</div>
-                                        <div class="goal-bar-wrap">
-                                            <div class="goal-bar-bg"><div class="goal-bar-fill" id="goal-bar-fill" style="width:0%"></div></div>
-                                            <div class="goal-bar-labels"><span id="goal-current">$0</span><span>$3,000</span></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="cal-weekdays">
-                                    <div class="cal-weekday">Mon</div>
-                                    <div class="cal-weekday">Tue</div>
-                                    <div class="cal-weekday">Wed</div>
-                                    <div class="cal-weekday">Thu</div>
-                                    <div class="cal-weekday">Fri</div>
-                                </div>
-                                <div class="cal-grid" id="cal-grid"></div>
-                                </div>
+.login-submit-btn {
+    width: 100%;
+    background-color: #d32f2f;
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background-color 0.2s, transform 0.1s;
+}
 
-                                <div id="cal-week-view" class="cal-view-panel">
-                                    <div class="cal-nav">
-                                        <button class="cal-nav-btn" id="cal-week-prev"><i class="fa-solid fa-chevron-left"></i></button>
-                                        <span class="cal-month-title" id="cal-week-title">Oct 5 – 9, 2026</span>
-                                        <button class="cal-nav-btn" id="cal-week-next"><i class="fa-solid fa-chevron-right"></i></button>
-                                    </div>
-                                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
-                                        <div class="stat-card" style="padding:12px;">
-                                            <div class="stat-label">Week P&amp;L</div>
-                                            <div class="stat-value positive" id="cal-week-total" style="font-size:18px;">+$0.00</div>
-                                        </div>
-                                        <div class="stat-card" style="padding:12px;">
-                                            <div class="stat-label">Weekly goal</div>
-                                            <div class="goal-bar-wrap">
-                                                <div class="goal-bar-bg"><div class="goal-bar-fill" id="week-goal-fill" style="width:0%"></div></div>
-                                                <div class="goal-bar-labels"><span id="week-goal-current">$0</span><span>$1,500</span></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="cal-weekdays week-view-labels">
-                                        <div class="cal-weekday">Mon</div>
-                                        <div class="cal-weekday">Tue</div>
-                                        <div class="cal-weekday">Wed</div>
-                                        <div class="cal-weekday">Thu</div>
-                                        <div class="cal-weekday">Fri</div>
-                                    </div>
-                                    <div class="cal-grid week-grid" id="cal-week-grid"></div>
-                                </div>
+.login-submit-btn:hover {
+    background-color: #b71c1c;
+}
 
-                                <div id="cal-year-view" class="cal-view-panel">
-                                    <div class="cal-nav">
-                                        <button class="cal-nav-btn" id="cal-year-prev"><i class="fa-solid fa-chevron-left"></i></button>
-                                        <span class="cal-month-title" id="cal-year-title">2026</span>
-                                        <button class="cal-nav-btn" id="cal-year-next"><i class="fa-solid fa-chevron-right"></i></button>
-                                    </div>
-                                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
-                                        <div class="stat-card" style="padding:12px;">
-                                            <div class="stat-label">Total P&amp;L</div>
-                                            <div class="stat-value positive" id="cal-year-total" style="font-size:18px;">+$0.00</div>
-                                            <div class="stat-sub" id="cal-year-sub">in 2026</div>
-                                        </div>
-                                        <div class="stat-card" style="padding:12px;">
-                                            <div class="stat-label">Yearly goal</div>
-                                            <div class="goal-bar-wrap">
-                                                <div class="goal-bar-bg"><div class="goal-bar-fill" id="year-goal-fill" style="width:0%"></div></div>
-                                                <div class="goal-bar-labels"><span id="year-goal-current">$0</span><span>$100,000</span></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="year-months-grid" id="year-months-grid"></div>
-                                </div>
-                            </div>
-                            <div class="equity-curve-wrap">
-                                <h4><i class="fa-solid fa-chart-area"></i> Equity Curve (Live Period)</h4>
-                                <div class="equity-chart-container"><canvas id="equityChart"></canvas></div>
-                            </div>
-                        </div>
-                        <div class="portfolio-right">
-                            <div class="metrics-section">
-                                <h3><i class="fa-solid fa-gauge-high"></i> Performance Metrics</h3>
-                                <div class="metrics-list">
-                                    <div class="metric-row"><span class="metric-label">Annualized Sharpe (90d, rf 4.3%)</span><span class="metric-value positive">2.2</span></div>
-                                    <div class="metric-row"><span class="metric-label">Sortino ratio (90-day)</span><span class="metric-value positive">3.1</span></div>
-                                    <div class="metric-row"><span class="metric-label">Live-period profit factor</span><span class="metric-value positive">1.87</span></div>
-                                    <div class="metric-row"><span class="metric-label">Win rate</span><span class="metric-value">58.4%</span></div>
-                                    <div class="metric-row"><span class="metric-label">Average R-multiple</span><span class="metric-value positive">+0.42R</span></div>
-                                    <div class="metric-row"><span class="metric-label">Max peak-to-trough DD</span><span class="metric-value negative">–4.8%</span></div>
-                                    <div class="metric-row"><span class="metric-label">Live / YTD return</span><span class="metric-value positive">~18.7%</span></div>
-                                    <div class="metric-row"><span class="metric-label">Trading days (live)</span><span class="metric-value">~84</span></div>
-                                </div>
-                            </div>
-                            <div class="info-card">
-                                <h4><i class="fa-solid fa-shield-halved"></i> Risk Management</h4>
-                                <ul>
-                                    <li>Max risk per trade: 0.75% of NLV</li>
-                                    <li>Max daily loss: 2.0% of NLV (auto-flatten)</li>
-                                    <li>Aggregate open risk cap: 1.5% of NLV</li>
-                                    <li>All MES/MNQ closed before 15:55 ET</li>
-                                    <li>No overnight futures positions</li>
-                                </ul>
-                            </div>
-                            <div class="info-card">
-                                <h4><i class="fa-solid fa-layer-group"></i> Instruments</h4>
-                                <ul>
-                                    <li>Primarily CME Micro E-mini S&amp;P 500 (MES)</li>
-                                    <li>Micro E-mini Nasdaq-100 (MNQ)</li>
-                                    <li>Shariah-screened large-cap U.S. equities</li>
-                                    <li>Small set of AAOIFI / SC Malaysia ETFs</li>
-                                    <li>No interest-rate, FX, or commodity futures</li>
-                                </ul>
-                            </div>
-                            <div class="info-card">
-                                <h4><i class="fa-solid fa-bolt"></i> Execution &amp; Slippage (90d)</h4>
-                                <ul>
-                                    <li>MES avg slippage: +0.18 ticks</li>
-                                    <li>MNQ avg slippage: +0.22 ticks</li>
-                                    <li>Cash equities: –0.4¢ vs midpoint</li>
-                                    <li>Predominantly limit-order based</li>
-                                </ul>
-                            </div>
-                            <div class="info-card">
-                                <h4><i class="fa-solid fa-filter"></i> Equity Screening</h4>
-                                <ul>
-                                    <li>Weekly Python pipeline (weekend rerun)</li>
-                                    <li>Debt-to-asset &lt; 33%</li>
-                                    <li>Non-permissible income &lt; 5%</li>
-                                    <li>AAOIFI + SC Malaysia compliant</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-                <section id="view-explore" class="tab-view">
-                    <div class="screener-page">
-                        <div class="screener-toolbar card">
-                            <div class="screener-title"><i class="fa-solid fa-bolt"></i> Live Market Screener</div>
-                            <div class="screener-filters">
-                                <button class="scr-filter active" data-scr="gainers">Gainers</button>
-                                <button class="scr-filter" data-scr="losers">Losers</button>
-                                <button class="scr-filter" data-scr="volume">High Volume</button>
-                                <button class="scr-filter" data-scr="futures">MES / MNQ</button>
-                                <button class="scr-filter" data-scr="shariah">Shariah</button>
-                            </div>
-                            <div class="screener-meta"><span class="live-dot">LIVE</span> <span id="scr-clock">10:47:22 ET</span></div>
-                        </div>
-                        <div class="screener-grid">
-                            <div class="card screener-table-wrap">
-                                <table class="scr-table" id="scr-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Symbol</th><th>Last</th><th>Chg%</th><th>Volume</th><th>Bid</th><th>Ask</th><th>Spread</th><th>RVOL</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="scr-body">
-                                        <tr data-sym="NVDA"><td class="sym">NVDA</td><td>450.21</td><td class="pos">+2.41%</td><td>48.2M</td><td>450.18</td><td>450.24</td><td>0.06</td><td>1.84x</td></tr>
-                                        <tr data-sym="TSLA"><td class="sym">TSLA</td><td>198.52</td><td class="pos">+1.12%</td><td>62.1M</td><td>198.50</td><td>198.55</td><td>0.05</td><td>1.22x</td></tr>
-                                        <tr data-sym="AMD"><td class="sym">AMD</td><td>112.50</td><td class="pos">+1.25%</td><td>31.4M</td><td>112.48</td><td>112.53</td><td>0.05</td><td>1.41x</td></tr>
-                                        <tr data-sym="MU"><td class="sym">MU</td><td>98.74</td><td class="pos">+3.02%</td><td>22.8M</td><td>98.70</td><td>98.78</td><td>0.08</td><td>2.10x</td></tr>
-                                        <tr data-sym="QQQ"><td class="sym">QQQ</td><td>370.10</td><td class="pos">+0.95%</td><td>28.6M</td><td>370.08</td><td>370.12</td><td>0.04</td><td>0.98x</td></tr>
-                                        <tr data-sym="SPY"><td class="sym">SPY</td><td>445.12</td><td class="pos">+0.75%</td><td>41.0M</td><td>445.10</td><td>445.14</td><td>0.04</td><td>0.91x</td></tr>
-                                        <tr data-sym="AAPL"><td class="sym">AAPL</td><td>182.44</td><td class="neg">-0.82%</td><td>39.5M</td><td>182.42</td><td>182.46</td><td>0.04</td><td>1.05x</td></tr>
-                                        <tr data-sym="META"><td class="sym">META</td><td>512.30</td><td class="pos">+0.64%</td><td>12.1M</td><td>512.20</td><td>512.40</td><td>0.20</td><td>0.88x</td></tr>
-                                        <tr data-sym="MSFT"><td class="sym">MSFT</td><td>428.15</td><td class="pos">+0.41%</td><td>15.3M</td><td>428.10</td><td>428.20</td><td>0.10</td><td>0.79x</td></tr>
-                                        <tr data-sym="CRWV"><td class="sym">CRWV</td><td>24.18</td><td class="neg">-3.20%</td><td>8.4M</td><td>24.15</td><td>24.22</td><td>0.07</td><td>2.55x</td></tr>
-                                        <tr data-sym="MES"><td class="sym">MES</td><td>5824.25</td><td class="pos">+0.18%</td><td>142k</td><td>5824.00</td><td>5824.50</td><td>0.50</td><td>—</td></tr>
-                                        <tr data-sym="MNQ"><td class="sym">MNQ</td><td>20148.50</td><td class="pos">+0.32%</td><td>98k</td><td>20148.00</td><td>20149.00</td><td>1.00</td><td>—</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="screener-side">
-                                <div class="card">
-                                    <div class="widget-title"><h4><i class="fa-solid fa-book"></i> Depth · <span id="scr-sym-label">NVDA</span></h4><span class="live-dot">L2</span></div>
-                                    <div class="l2-tables" id="scr-l2">
-                                        <div class="l2-col">
-                                            <div class="l2-header"><span>Bid Sz</span><span>Bid</span></div>
-                                            <div class="l2-row"><span class="size-val">800</span><span class="buy-price">450.18</span></div>
-                                            <div class="l2-row"><span class="size-val">1200</span><span class="buy-price">450.15</span></div>
-                                            <div class="l2-row"><span class="size-val">450</span><span class="buy-price">450.10</span></div>
-                                            <div class="l2-row"><span class="size-val">2100</span><span class="buy-price">450.05</span></div>
-                                            <div class="l2-row"><span class="size-val">900</span><span class="buy-price">450.00</span></div>
-                                        </div>
-                                        <div class="l2-col">
-                                            <div class="l2-header"><span>Ask</span><span>Ask Sz</span></div>
-                                            <div class="l2-row"><span class="sell-price">450.24</span><span class="size-val">600</span></div>
-                                            <div class="l2-row"><span class="sell-price">450.28</span><span class="size-val">1100</span></div>
-                                            <div class="l2-row"><span class="sell-price">450.32</span><span class="size-val">750</span></div>
-                                            <div class="l2-row"><span class="sell-price">450.40</span><span class="size-val">1800</span></div>
-                                            <div class="l2-row"><span class="sell-price">450.45</span><span class="size-val">500</span></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="card">
-                                    <div class="widget-title"><h4><i class="fa-solid fa-stream"></i> Time &amp; Sales</h4></div>
-                                    <div class="tas-list" id="tas-list">
-                                        <div class="tas-row buy"><span>10:47:21</span><span>450.22</span><span>200</span></div>
-                                        <div class="tas-row sell"><span>10:47:20</span><span>450.20</span><span>150</span></div>
-                                        <div class="tas-row buy"><span>10:47:19</span><span>450.21</span><span>500</span></div>
-                                        <div class="tas-row buy"><span>10:47:18</span><span>450.19</span><span>100</span></div>
-                                        <div class="tas-row sell"><span>10:47:17</span><span>450.18</span><span>300</span></div>
-                                        <div class="tas-row buy"><span>10:47:16</span><span>450.21</span><span>75</span></div>
-                                        <div class="tas-row sell"><span>10:47:15</span><span>450.17</span><span>420</span></div>
-                                        <div class="tas-row buy"><span>10:47:14</span><span>450.20</span><span>1,000</span></div>
-                                    </div>
-                                </div>
-                                <div class="card util-strip">
-                                    <div class="util-row"><span>Buying Power</span><span class="mono">$214,820.40</span></div>
-                                    <div class="util-row"><span>Excess Liquidity</span><span class="mono">$89,412.00</span></div>
-                                    <div class="util-row"><span>Open Risk</span><span class="mono pos">0.00% NLV</span></div>
-                                    <div class="util-row"><span>Day Trades (5bd)</span><span class="mono">0 / ∞</span></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
+.login-submit-btn:active {
+    transform: scale(0.98);
+}
 
-            </div>
-        </main>
+.login-footer {
+    margin-top: 24px;
+    font-size: 12px;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
 
-        <button class="universal-trade-btn">
-            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M15 5l5 5-5 5" />
-                <path d="M20 10h-2" />
-                <line x1="15" y1="10" x2="6" y2="10" stroke-dasharray="2 3" />
-                <path d="M9 19l-5-5 5-5" />
-                <path d="M4 14h2" />
-                <line x1="9" y1="14" x2="18" y2="14" stroke-dasharray="2 3" />
-            </svg>
-            <span>Trade</span>
-        </button>
+/* --- LAYOUT --- */
+.app-layout { display: flex; min-height: 100vh; position: relative; z-index: 1; background: var(--bg-page); }
+.sidebar { display: none; width: 260px; background-color: var(--bg-sidebar); border-right: 1px solid var(--nav-border); flex-direction: column; position: sticky; top: 0; height: 100vh; }
+.main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; padding-bottom: 70px; }
 
-        <nav class="bottom-nav">
-            <button class="nav-item active view-trigger" data-target="view-home"><i class="fa-solid fa-house"></i><span>Home</span></button>
-            <button class="nav-item view-trigger" data-target="view-portfolio"><i class="fa-solid fa-chart-pie"></i><span>Portfolio</span></button>
-            <button class="nav-item view-trigger" data-target="view-order-history"><i class="fa-solid fa-clock-rotate-left"></i><span>History</span></button>
-            <button class="nav-item view-trigger" data-target="view-explore"><i class="fa-solid fa-compass"></i><span>Explore</span></button>
-        </nav>
-    </div>
+/* --- SIDEBAR --- */
+.sidebar-header { padding: 24px; border-bottom: 1px solid var(--nav-border); }
+.ib-logo { display: flex; align-items: center; gap: 6px; }
+.ib-text { font-size: 18px; color: var(--text-primary); }
+.sidebar-nav { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.side-link { text-decoration: none; color: var(--text-secondary); padding: 12px 16px; border-radius: 8px; font-weight: 500; display: flex; align-items: center; gap: 12px; transition: 0.2s; }
+.side-link:hover { background-color: var(--input-bg); color: var(--text-primary); }
+.side-link.active { background-color: var(--pill-active-bg); color: var(--accent-blue); }
+.side-link i { font-size: 18px; width: 24px; }
+.sidebar-divider { height: 1px; background-color: var(--nav-border); margin: 8px 0; }
+.desktop-only { display: none; }
 
-    <div id="edit-modal" class="modal-backdrop">
-        <div class="modal-card">
-            <h3>Edit Portfolio Balance</h3>
-            <div class="form-group">
-                <label for="input-balance">Total Value ($)</label>
-                <input type="number" id="input-balance" step="0.01">
-            </div>
-            <div class="modal-actions">
-                <button id="cancel-modal-btn" class="btn btn-secondary">Cancel</button>
-                <button id="save-modal-btn" class="btn btn-primary">Save Changes</button>
-            </div>
-        </div>
-    </div>
+/* --- HEADER --- */
+.top-header { background-color: var(--bg-header); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--nav-border); position: sticky; top: 0; z-index: 50; }
+.mobile-logo-container { display: flex; align-items: center; gap: 16px; width: 100%; }
+.desktop-search { display: none; align-items: center; background-color: var(--input-bg); border-radius: 20px; padding: 8px 16px; width: 300px; gap: 10px; }
+.desktop-search input { background: none; border: none; outline: none; width: 100%; color: var(--text-primary); }
+.header-actions { display: flex; align-items: center; gap: 14px; margin-left: auto; }
+.icon-btn { background: none; border: none; color: var(--text-primary); font-size: 19px; cursor: pointer; position: relative; }
+.profile-avatar { width: 34px; height: 34px; border-radius: 50%; background-color: var(--input-bg); display: flex; align-items: center; justify-content: center; color: var(--text-primary); transition: 0.2s; }
+.profile-avatar:hover { background-color: var(--nav-border); }
+.desktop-avatar { display: none; }
 
-    <script src="script.js"></script>
-</body>
-</html>
+/* Notifications Dropdown */
+.notif-wrapper { position: relative; }
+.notif-badge { position: absolute; top: -4px; right: -6px; background: var(--red-negative); color: white; font-size: 10px; font-weight: bold; padding: 2px 5px; border-radius: 10px; border: 2px solid var(--bg-header); }
+.notif-dropdown { position: absolute; top: 40px; right: -10px; width: 280px; background: var(--card-bg); border: 1px solid var(--card-border); box-shadow: var(--card-shadow); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; z-index: 100; transition: opacity 0.2s, transform 0.2s; transform-origin: top right; }
+.notif-dropdown.hidden { opacity: 0; transform: scale(0.95); pointer-events: none; }
+.notif-header { padding: 12px 16px; font-weight: 600; font-size: 14px; border-bottom: 1px solid var(--card-border); background: var(--table-header); color: var(--text-primary); }
+.notif-item { padding: 12px 16px; font-size: 13px; color: var(--text-secondary); border-bottom: 1px solid var(--card-border); display: flex; gap: 10px; align-items: center; cursor: pointer; transition: background 0.2s; }
+.notif-item:hover { background: var(--input-bg); }
+.notif-item:last-child { border-bottom: none; }
+
+/* --- VIEWS --- */
+.views-container { padding: 20px; max-width: 1300px; margin: 0 auto; width: 100%; }
+.tab-view { display: none; }
+.tab-view.active { display: block; animation: fadeIn 0.3s; }
+.placeholder-view { text-align: center; padding-top: 100px; color: var(--text-secondary); }
+
+/* --- DASHBOARD GRID --- */
+.dashboard-grid { display: flex; flex-direction: column; gap: 16px; }
+.dashboard-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.title-tabs { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 600; color: var(--text-secondary); }
+.title-tab.active { color: var(--text-primary); }
+.title-divider { color: var(--text-muted); }
+.info-btn { background: none; border: none; color: var(--accent-blue); font-size: 18px; cursor: pointer; }
+
+/* Balance */
+.balance-widget { position: relative; margin-bottom: 10px; }
+.balance-header { display: flex; align-items: center; gap: 10px; }
+.balance-amount { font-size: 36px; font-weight: 700; letter-spacing: -0.8px; user-select: none; cursor: default; }
+.balance-amount .cents { font-size: 26px; }
+.balance-change { font-size: 15px; font-weight: 600; margin-top: 2px; }
+.balance-change.positive { color: var(--green-positive); }
+.balance-change.negative { color: var(--red-negative); }
+.change-period { color: var(--text-secondary); font-weight: 400; }
+
+/* Cards & Charts */
+.card { background-color: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 16px; box-shadow: var(--card-shadow); }
+.chart-widget.card { padding: 16px 8px; border: none; box-shadow: none; background: transparent; margin-bottom: 10px; } 
+.chart-container { width: 100%; height: 260px; position: relative; }
+.time-range-pills { display: flex; justify-content: space-between; margin-top: 12px; padding: 0 4px; }
+.pill { background: transparent; border: none; color: var(--text-secondary); font-weight: 600; font-size: 13px; padding: 6px 12px; border-radius: 16px; cursor: pointer; }
+.pill.active { background-color: var(--pill-active-bg); color: var(--accent-blue); }
+
+/* News */
+.news-card { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-top: 10px; }
+.news-headline { font-size: 14px; font-weight: 600; line-height: 1.35; }
+.news-meta { font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
+.carousel-indicators { display: flex; justify-content: center; gap: 6px; margin-top: 14px; }
+.dot { width: 6px; height: 6px; border-radius: 50%; background-color: var(--text-muted); opacity: 0.3; }
+.dot.active { opacity: 0.8; }
+
+/* --- LEVEL 2 MARKET DEPTH & ACTIVE MOVERS --- */
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.3; }
+    100% { opacity: 1; }
+}
+
+.l2-widget .widget-title, 
+.movers-widget h4 { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    border-bottom: 1px solid var(--nav-border); 
+    padding-bottom: 12px; 
+    margin-bottom: 12px; 
+}
+.l2-widget h4, .movers-widget h4 { font-size: 15px; color: var(--text-primary); }
+
+.live-dot { 
+    font-size: 10px; 
+    font-weight: 700; 
+    color: var(--red-negative); 
+    background: rgba(211, 47, 47, 0.1); 
+    padding: 3px 8px; 
+    border-radius: 12px; 
+    animation: pulse 1.5s infinite; 
+}
+
+.l2-tables { display: flex; gap: 12px; }
+.l2-col { flex: 1; display: flex; flex-direction: column; gap: 4px; font-family: 'Courier New', Courier, monospace; font-size: 12px; font-weight: 600; }
+.l2-header { display: flex; justify-content: space-between; color: var(--text-muted); font-family: -apple-system, sans-serif; font-size: 11px; margin-bottom: 4px; text-transform: uppercase; background: var(--table-header); padding: 4px 8px; border-radius: 4px; }
+.l2-row { display: flex; justify-content: space-between; padding: 4px 8px; border-radius: 4px; transition: background-color 0.15s; }
+.buy-price { color: var(--green-positive); }
+.sell-price { color: var(--red-negative); }
+.size-val { color: var(--text-primary); transition: color 0.15s; }
+
+.movers-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.movers-list li { display: flex; justify-content: space-between; font-size: 14px; font-weight: 600; padding: 6px 0; border-bottom: 1px solid var(--card-border); }
+.movers-list li:last-child { border-bottom: none; }
+.movers-list .ticker { color: var(--text-primary); width: 60px; }
+
+/* --- PROFILE VIEW --- */
+.tt-profile-container { max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; padding-top: 20px; }
+.tt-profile-header { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; }
+.tt-avatar-large { width: 96px; height: 96px; border-radius: 50%; background-color: var(--input-bg); color: var(--text-muted); font-size: 40px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--card-border); }
+.tt-name { font-size: 22px; font-weight: 700; color: var(--text-primary); margin-top: 8px; }
+.tt-username { font-size: 14px; font-weight: 500; color: var(--text-secondary); }
+
+.tt-stats { display: flex; justify-content: center; gap: 32px; margin: 24px 0; width: 100%; }
+.tt-stat { display: flex; flex-direction: column; align-items: center; }
+.tt-val { font-size: 20px; font-weight: 700; color: var(--text-primary); }
+.tt-label { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+
+.tt-bio { text-align: center; font-size: 14px; color: var(--text-primary); max-width: 80%; line-height: 1.5; margin-bottom: 32px; }
+
+.tt-graphs-scroll { width: 100%; display: flex; flex-direction: column; gap: 20px; padding-bottom: 40px; }
+.graph-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 20px; box-shadow: var(--card-shadow); }
+.graph-card h4 { font-size: 15px; color: var(--text-primary); margin-bottom: 16px; border-bottom: 1px solid var(--card-border); padding-bottom: 12px; }
+.complex-chart-container { position: relative; height: 280px; width: 100%; }
+
+/* --- UNIVERSAL TRADE BUTTON --- */
+.universal-trade-btn { position: fixed; bottom: 85px; right: 20px; background-color: var(--accent-blue); color: #fff; border: none; border-radius: 28px; padding: 14px 24px; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px; box-shadow: 0 6px 20px rgba(0, 102, 204, 0.4); cursor: pointer; z-index: 20; transition: transform 0.2s, background 0.2s; }
+.universal-trade-btn:hover { background-color: var(--accent-blue-hover); transform: scale(1.05); }
+
+/* --- BOTTOM NAV --- */
+.bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background-color: var(--bg-header); border-top: 1px solid var(--nav-border); display: flex; justify-content: space-around; align-items: center; z-index: 10; }
+.nav-item { background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-muted); font-size: 11px; cursor: pointer; width: 25%; }
+.nav-item i { font-size: 18px; }
+.nav-item.active { color: var(--accent-blue); }
+
+/* --- MODAL --- */
+.modal-backdrop { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: var(--modal-overlay); display: none; justify-content: center; align-items: center; z-index: 200; }
+.modal-backdrop.active { display: flex; }
+.modal-card { background-color: var(--card-bg); border-radius: 20px; padding: 24px; width: 90%; max-width: 360px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+.modal-card h3 { margin-bottom: 16px; font-size: 18px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.form-group label { font-size: 12px; color: var(--text-secondary); }
+.form-group input { background-color: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px 12px; color: var(--text-primary); font-size: 16px; outline: none; }
+.modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+.btn { flex: 1; padding: 10px; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; }
+.btn-secondary { background-color: var(--input-bg); color: var(--text-primary); }
+.btn-primary { background-color: var(--accent-blue); color: #ffffff; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* =========================================
+   PORTFOLIO / P&L CALENDAR STYLES
+   ========================================= */
+.portfolio-page { display: flex; flex-direction: column; gap: 20px; padding-bottom: 32px; }
+.portfolio-left {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+.portfolio-right {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 8px;
+}
+.portfolio-header-stats {
+    margin-bottom: 4px;
+}
+#view-portfolio .card,
+#view-portfolio .equity-curve-wrap,
+#view-portfolio .metrics-section,
+#view-portfolio .info-card {
+    margin-top: 0;
+}
+#view-portfolio .portfolio-left > * + * {
+    margin-top: 0;
+}
+
+.portfolio-header-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 4px;
+}
+
+.stat-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: var(--card-shadow);
+}
+
+.stat-card .stat-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.stat-card .stat-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.4px;
+}
+
+.stat-card .stat-value.positive { color: var(--green-positive); }
+.stat-card .stat-value.negative { color: var(--red-negative); }
+
+.stat-card .stat-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.goal-bar-wrap {
+    margin-top: 10px;
+}
+
+.goal-bar-bg {
+    height: 8px;
+    background: var(--input-bg);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.goal-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--green-positive), #34d399);
+    border-radius: 4px;
+    transition: width 0.4s ease;
+}
+
+.goal-bar-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+/* Calendar range pills */
+.cal-range-pills {
+    display: flex;
+    gap: 6px;
+    background: var(--input-bg);
+    padding: 4px;
+    border-radius: 12px;
+    margin-bottom: 18px;
+}
+
+.cal-range-pill {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 13px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.cal-range-pill.active {
+    background: var(--green-positive);
+    color: #fff;
+}
+
+/* Calendar navigation */
+.cal-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.cal-nav-btn {
+    background: var(--input-bg);
+    border: 1px solid var(--card-border);
+    color: var(--text-primary);
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.cal-nav-btn:hover { background: var(--nav-border); }
+.cal-nav-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.cal-month-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* Calendar grid */
+.cal-weekdays {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.cal-weekday {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    padding: 4px 0;
+}
+
+.cal-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+}
+
+.cal-day {
+    aspect-ratio: 1;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 4px;
+    cursor: default;
+    transition: transform 0.15s, box-shadow 0.15s;
+    position: relative;
+    min-height: 64px;
+}
+
+.cal-day.has-data:hover {
+    transform: scale(1.04);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 2;
+}
+
+.cal-day.win {
+    background: rgba(15, 157, 88, 0.28);
+    color: #6ee7a0;
+    border: 1px solid rgba(15, 157, 88, 0.45);
+    box-shadow:
+        0 0 12px rgba(15, 157, 88, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.cal-day.loss {
+    background: rgba(211, 47, 47, 0.28);
+    color: #fca5a5;
+    border: 1px solid rgba(211, 47, 47, 0.45);
+    box-shadow:
+        0 0 12px rgba(211, 47, 47, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+[data-theme="dark"] .cal-day.win {
+    background: rgba(38, 166, 154, 0.22);
+    color: #5eead4;
+    border-color: rgba(38, 166, 154, 0.4);
+    box-shadow:
+        0 0 14px rgba(38, 166, 154, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .cal-day.loss {
+    background: rgba(239, 83, 80, 0.22);
+    color: #fca5a5;
+    border-color: rgba(239, 83, 80, 0.4);
+    box-shadow:
+        0 0 14px rgba(239, 83, 80, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.cal-day.empty {
+    background: rgba(128, 128, 128, 0.08);
+    color: var(--text-muted);
+    border: 1px solid rgba(128, 128, 128, 0.12);
+}
+
+.cal-day.future {
+    background: var(--cal-future);
+    color: var(--text-muted);
+    opacity: 0.55;
+}
+
+.cal-day.weekend-spacer {
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.cal-day-num {
+    font-size: 11px;
+    font-weight: 600;
+    opacity: 0.85;
+    margin-bottom: 2px;
+}
+
+.cal-day-pnl {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    line-height: 1.1;
+}
+
+.cal-day-trades {
+    font-size: 9px;
+    opacity: 0.8;
+    margin-top: 2px;
+}
+
+.cal-day.empty .cal-day-pnl,
+.cal-day.future .cal-day-pnl {
+    font-size: 14px;
+    opacity: 0.4;
+}
+
+/* Desktop: larger calendar cells */
+@media (min-width: 600px) {
+    .cal-day {
+        min-height: 78px;
+        border-radius: 14px;
+    }
+    .cal-day-num { font-size: 12px; }
+    .cal-day-pnl { font-size: 13px; }
+    .cal-day-trades { font-size: 10px; }
+}
+
+/* Stats grid below calendar */
+.pnl-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.pnl-stats-grid .stat-card .stat-value {
+    font-size: 18px;
+}
+
+/* Detailed metrics section */
+.metrics-section {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: var(--card-shadow);
+}
+
+.metrics-section h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-primary);
+}
+
+.metrics-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.metric-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--card-border);
+    gap: 12px;
+}
+
+.metric-row:last-child { border-bottom: none; }
+
+.metric-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    flex: 1;
+}
+
+.metric-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-align: right;
+    white-space: nowrap;
+}
+
+.metric-value.positive { color: var(--green-positive); }
+.metric-value.negative { color: var(--red-negative); }
+
+/* Instruments & risk cards */
+.info-cards-row {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.info-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: var(--card-shadow);
+}
+
+.info-card h4 {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.info-card p, .info-card li {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.info-card ul {
+    list-style: none;
+    padding: 0;
+}
+
+.info-card li {
+    padding: 4px 0;
+    display: flex;
+    gap: 8px;
+}
+
+.info-card li::before {
+    content: "•";
+    color: var(--accent-blue);
+    font-weight: 700;
+}
+
+/* Equity curve mini chart */
+.equity-curve-wrap {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: var(--card-shadow);
+}
+
+.equity-curve-wrap h4 {
+    font-size: 15px;
+    margin-bottom: 12px;
+    color: var(--text-primary);
+}
+
+.equity-chart-container {
+    height: 200px;
+    position: relative;
+}
+
+/* =========================================
+   MOBILE RESPONSIVE ORDERING (< 900px)
+   ========================================= */
+@media (max-width: 899px) {
+    .dashboard-grid { 
+        display: flex; 
+        flex-direction: column; 
+        gap: 16px; 
+    }
+    
+    .col-left, .col-right { 
+        display: contents; 
+    }
+
+    /* Mobile stack — ticker stays above balance (outside this grid) */
+    .dashboard-section-header { order: 1; }
+    .balance-widget           { order: 2; }
+    .chart-widget             { order: 3; }
+    .news-card                { order: 4; }   /* TSLA alert */
+    .carousel-indicators      { order: 5; }
+    .home-tas                 { order: 6; }   /* Time & Sales under alert */
+    .util-strip               { order: 7; }   /* session util under T&S */
+    .l2-widget                { order: 8; }
+    .movers-widget            { order: 9; }
+
+    .portfolio-header-stats {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* =========================================
+   DESKTOP RESPONSIVE (>= 900px)
+   ========================================= */
+@media (min-width: 900px) {
+    .main-content { padding-bottom: 0; }
+    .sidebar { display: flex; }
+    .desktop-only { display: block; }
+    
+    .mobile-logo-container { width: auto; }
+    .mobile-logo { display: none; }
+    .desktop-search { display: flex; }
+    .desktop-avatar { display: flex; }
+    .mobile-logo-container .profile-avatar { display: none; }
+
+    .bottom-nav { display: none; }
+    
+    .universal-trade-btn { position: absolute; top: 85px; right: 20px; bottom: auto; padding: 10px 20px; border-radius: 8px; }
+
+    .dashboard-grid { display: grid; grid-template-columns: 1.8fr 1fr; gap: 24px; align-items: start; }
+    .col-left { display: flex; flex-direction: column; gap: 20px; }
+    .col-right { display: flex; flex-direction: column; gap: 20px; margin-top: 36px; }
+    
+    .dashboard-section-header, .balance-widget, .chart-widget, 
+    .news-card, .carousel-indicators, .l2-widget, .movers-widget {
+        order: initial;
+    }
+
+    .balance-widget { background: var(--card-bg); padding: 24px; border-radius: 16px; border: 1px solid var(--card-border); box-shadow: var(--card-shadow); margin-bottom: 0; }
+    .chart-widget.card { padding: 24px; border: 1px solid var(--card-border); background: var(--card-bg); box-shadow: var(--card-shadow); margin-bottom: 0; }
+    .chart-container { height: 320px; }
+    .news-card { margin-top: 0; }
+
+    .quick-trade-widget h4 { font-size: 15px; margin-bottom: 12px; }
+    .trade-inputs { display: flex; gap: 10px; margin-bottom: 16px; }
+    .trade-inputs input { flex: 1; background: var(--input-bg); border: 1px solid var(--card-border); color: var(--text-primary); padding: 12px; border-radius: 8px; font-weight: 600; outline: none; }
+    
+    .trade-action-btns { display: flex; gap: 12px; }
+    .trade-action-btns button { 
+        flex: 1; 
+        padding: 14px; 
+        border: 1px solid rgba(255,255,255,0.1); 
+        border-radius: 12px; 
+        font-weight: 800; 
+        color: white; 
+        cursor: pointer; 
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        backdrop-filter: blur(10px);
+        letter-spacing: 0.5px;
+    }
+    .buy-btn { 
+        background: linear-gradient(135deg, rgba(15, 157, 88, 0.9), rgba(11, 122, 68, 0.95)); 
+        box-shadow: 0 6px 16px -4px rgba(15, 157, 88, 0.5); 
+    }
+    .buy-btn:hover { 
+        transform: translateY(-2px); 
+        box-shadow: 0 10px 20px -4px rgba(15, 157, 88, 0.7); 
+    }
+    .sell-btn { 
+        background: linear-gradient(135deg, rgba(211, 47, 47, 0.9), rgba(160, 35, 35, 0.95)); 
+        box-shadow: 0 6px 16px -4px rgba(211, 47, 47, 0.5); 
+    }
+    .sell-btn:hover { 
+        transform: translateY(-2px); 
+        box-shadow: 0 10px 20px -4px rgba(211, 47, 47, 0.7); 
+    }
+
+    /* Portfolio desktop layout */
+    .portfolio-header-stats {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .pnl-stats-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .info-cards-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    .cal-day {
+        min-height: 90px;
+    }
+
+    .cal-day-pnl { font-size: 14px; }
+    .cal-day-trades { font-size: 11px; }
+}
+
+@media (min-width: 900px) {
+    .portfolio-page {
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+        max-width: 920px;
+        margin: 0 auto;
+    }
+    .portfolio-left, .portfolio-right {
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+        width: 100%;
+    }
+    .portfolio-header-stats {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+    }
+    .cal-day {
+        min-height: 88px;
+        border-radius: 14px;
+    }
+    .cal-day-pnl { font-size: 14px; }
+    .cal-day-trades { font-size: 11px; }
+    .metrics-section, .info-card, .equity-curve-wrap, .card {
+        /* already styled */
+    }
+}
+
+@media (min-width: 1100px) {
+    .portfolio-page {
+        max-width: 1100px;
+        display: grid;
+        grid-template-columns: 1.35fr 1fr;
+        gap: 28px;
+        align-items: start;
+    }
+    .portfolio-left { display: flex; flex-direction: column; gap: 28px; }
+    .portfolio-right { display: flex; flex-direction: column; gap: 20px; }
+}
+
+
+#view-portfolio .portfolio-header-stats {
+    margin-bottom: 0;
+}
+
+/* ===== FORCE PORTFOLIO SECTION SPACING (mobile-first) ===== */
+.portfolio-page {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 28px !important;
+    padding-bottom: 40px !important;
+}
+.portfolio-left {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 28px !important;
+    width: 100%;
+}
+.portfolio-right {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 20px !important;
+    width: 100%;
+    margin-top: 4px;
+}
+.portfolio-header-stats {
+    margin-bottom: 0 !important;
+}
+.portfolio-left > .portfolio-header-stats,
+.portfolio-left > .card,
+.portfolio-left > .equity-curve-wrap {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+/* explicit separation so nothing touches */
+.portfolio-header-stats {
+    margin-bottom: 0;
+}
+.portfolio-left > .card {
+    margin-top: 0;
+}
+.portfolio-left > .equity-curve-wrap {
+    margin-top: 0;
+}
+
+/* ===== YEAR / WEEK VIEW PANELS ===== */
+.cal-view-panel {
+    display: none;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.28s ease, transform 0.28s ease;
+}
+.cal-view-panel.active {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+    animation: calPanelIn 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes calPanelIn {
+    from { opacity: 0; transform: translateY(12px) scale(0.985); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Week view — larger mobile-friendly day squares */
+.week-grid {
+    display: grid !important;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+}
+.week-grid .cal-day {
+    min-height: 88px;
+    border-radius: 14px;
+    padding: 10px 4px;
+}
+.week-grid .cal-day-num {
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+.week-grid .cal-day-pnl {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+.week-grid .cal-day-trades {
+    font-size: 9px;
+    margin-top: 3px;
+    opacity: 0.85;
+}
+.week-grid .cal-day.future,
+.week-grid .cal-day.empty {
+    min-height: 88px;
+}
+.week-view-labels {
+    margin-bottom: 8px;
+}
+@media (min-width: 600px) {
+    .week-grid { gap: 12px; }
+    .week-grid .cal-day {
+        min-height: 110px;
+        border-radius: 16px;
+        padding: 14px 6px;
+    }
+    .week-grid .cal-day-num { font-size: 13px; }
+    .week-grid .cal-day-pnl { font-size: 13px; }
+    .week-grid .cal-day-trades { font-size: 10px; }
+}
+@media (max-width: 380px) {
+    .week-grid .cal-day-pnl { font-size: 9.5px; letter-spacing: -0.5px; }
+    .week-grid .cal-day { min-height: 78px; padding: 8px 2px; }
+}
+
+.year-months-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.year-month-card {
+    background: var(--input-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    padding: 12px 10px 10px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    min-height: 110px;
+}
+.year-month-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+    border-color: var(--accent-blue);
+}
+.year-month-card:active {
+    transform: scale(0.97);
+}
+.year-month-card.empty-month {
+    opacity: 0.55;
+    cursor: default;
+}
+.year-month-card.empty-month:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: var(--card-border);
+}
+
+.year-month-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 0.2px;
+}
+
+.year-mini-cal {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 3px;
+    width: 100%;
+    max-width: 90px;
+}
+
+.year-mini-dot {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 3px;
+    background: var(--cal-empty);
+}
+.year-mini-dot.win {
+    background: rgba(15, 157, 88, 0.55);
+    box-shadow: 0 0 4px rgba(15, 157, 88, 0.35);
+}
+.year-mini-dot.loss {
+    background: rgba(211, 47, 47, 0.55);
+    box-shadow: 0 0 4px rgba(211, 47, 47, 0.35);
+}
+[data-theme="dark"] .year-mini-dot.win {
+    background: rgba(38, 166, 154, 0.5);
+    box-shadow: 0 0 5px rgba(38, 166, 154, 0.4);
+}
+[data-theme="dark"] .year-mini-dot.loss {
+    background: rgba(239, 83, 80, 0.5);
+    box-shadow: 0 0 5px rgba(239, 83, 80, 0.4);
+}
+.year-mini-dot.none { background: transparent; }
+.year-mini-dot.future { background: var(--cal-future); opacity: 0.4; }
+
+.year-month-pnl {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+}
+.year-month-pnl.positive { color: var(--green-positive); }
+.year-month-pnl.negative { color: var(--red-negative); }
+.year-month-pnl.zero { color: var(--text-muted); }
+
+@media (min-width: 600px) {
+    .year-months-grid {
+        gap: 14px;
+    }
+    .year-month-card {
+        min-height: 130px;
+        padding: 14px 12px 12px;
+        border-radius: 16px;
+    }
+    .year-month-name { font-size: 14px; }
+    .year-month-pnl { font-size: 14px; }
+    .year-mini-cal { max-width: 100px; gap: 4px; }
+}
+
+/* ===== MONTH / YEAR NAV TRANSITIONS ===== */
+.cal-grid {
+    transition: opacity 0.18s ease, transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cal-grid.cal-slide-out-left {
+    opacity: 0;
+    transform: translateX(-18px);
+}
+.cal-grid.cal-slide-out-right {
+    opacity: 0;
+    transform: translateX(18px);
+}
+.cal-grid.cal-slide-in-left {
+    animation: calSlideInFromRight 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cal-grid.cal-slide-in-right {
+    animation: calSlideInFromLeft 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes calSlideInFromRight {
+    from { opacity: 0; transform: translateX(22px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+@keyframes calSlideInFromLeft {
+    from { opacity: 0; transform: translateX(-22px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.cal-month-title {
+    transition: opacity 0.15s ease, transform 0.2s ease;
+}
+.cal-month-title.cal-title-out {
+    opacity: 0;
+    transform: translateY(-4px);
+}
+
+.cal-nav-btn {
+    transition: transform 0.15s ease, background 0.2s, opacity 0.2s;
+}
+.cal-nav-btn:active:not(:disabled) {
+    transform: scale(0.88);
+}
+
+.year-months-grid {
+    transition: opacity 0.18s ease, transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.year-months-grid.cal-slide-out-left {
+    opacity: 0;
+    transform: translateX(-16px);
+}
+.year-months-grid.cal-slide-out-right {
+    opacity: 0;
+    transform: translateX(16px);
+}
+.year-months-grid.cal-slide-in-left {
+    animation: calSlideInFromRight 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.year-months-grid.cal-slide-in-right {
+    animation: calSlideInFromLeft 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.year-month-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+}
+
+/* P&L cell text fit (cents + commas + sign) */
+.cal-day {
+    overflow: hidden;
+    padding: 4px 2px;
+}
+.cal-day-pnl {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: -0.4px;
+    line-height: 1.15;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 0 1px;
+}
+.cal-day-num {
+    font-size: 10px;
+}
+.cal-day-trades {
+    font-size: 8px;
+    margin-top: 1px;
+}
+@media (min-width: 600px) {
+    .cal-day-pnl { font-size: 11px; letter-spacing: -0.3px; }
+    .cal-day-num { font-size: 11px; }
+    .cal-day-trades { font-size: 9px; }
+}
+@media (min-width: 900px) {
+    .cal-day-pnl { font-size: 12px; }
+    .cal-day-num { font-size: 12px; }
+    .cal-day-trades { font-size: 10px; }
+}
+
+/* ===== UTILITARIAN / TWS DENSITY ===== */
+.status-ticker {
+    background: var(--bg-header);
+    border-bottom: 1px solid var(--nav-border);
+    overflow: hidden;
+    height: 28px;
+    font-size: 11px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+}
+.ticker-track {
+    display: flex;
+    gap: 28px;
+    white-space: nowrap;
+    padding: 0 16px;
+    animation: tickerScroll 40s linear infinite;
+}
+.ticker-track span { display: inline-flex; gap: 6px; align-items: center; }
+.ticker-track em { font-style: normal; font-weight: 700; }
+.ticker-track .pos, .pos { color: var(--green-positive); }
+.ticker-track .neg, .neg { color: var(--red-negative); }
+@keyframes tickerScroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+
+.sidebar-footer-meta {
+    margin-top: auto;
+    padding: 16px;
+    border-top: 1px solid var(--nav-border);
+    font-size: 11px;
+    color: var(--text-muted);
+}
+.conn-status { display: flex; align-items: center; gap: 8px; color: var(--text-secondary); font-weight: 600; }
+.conn-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--green-positive);
+    box-shadow: 0 0 6px var(--green-positive);
+    animation: pulse 1.8s infinite;
+}
+.conn-sub { margin-top: 4px; font-family: ui-monospace, monospace; font-size: 10px; }
+.side-badge {
+    margin-left: auto;
+    background: var(--red-negative);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 8px;
+}
+.sidebar-nav { flex: 1; }
+
+.notif-dropdown { width: 320px; max-height: 420px; }
+.notif-count {
+    float: right;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+.notif-item {
+    align-items: flex-start;
+    gap: 10px;
+    line-height: 1.35;
+}
+.notif-item strong { color: var(--text-primary); }
+.notif-meta {
+    display: block;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.msg-wrapper { position: relative; }
+.msg-dropdown { width: 300px; }
+.msg-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--card-border);
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.msg-item:hover { background: var(--input-bg); }
+.msg-item.unread { border-left: 3px solid var(--accent-blue); }
+.msg-from { font-size: 12px; font-weight: 700; color: var(--text-primary); }
+.msg-preview { font-size: 12px; color: var(--text-secondary); margin-top: 3px; line-height: 1.3; }
+.msg-time { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
+.msg-footer {
+    padding: 10px 16px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-blue);
+    cursor: pointer;
+}
+
+.tas-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11px;
+    max-height: 180px;
+    overflow-y: auto;
+}
+.tas-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    padding: 4px 6px;
+    border-radius: 4px;
+}
+.tas-row.buy { color: var(--green-positive); background: rgba(15,157,88,0.06); }
+.tas-row.sell { color: var(--red-negative); background: rgba(211,47,47,0.06); }
+
+.util-strip, .util-panel {
+    font-size: 12px;
+}
+.util-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--card-border);
+    color: var(--text-secondary);
+    gap: 12px;
+}
+.util-row:last-child { border-bottom: none; }
+.util-row .mono, .mono {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.util-row.muted { opacity: 0.7; font-size: 11px; }
+.util-panel h4 {
+    font-size: 13px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--card-border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.pos-empty {
+    font-size: 13px;
+    color: var(--text-muted);
+    padding: 12px 0;
+    text-align: center;
+}
+
+.account-util-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    width: 100%;
+    margin-bottom: 20px;
+}
+@media (min-width: 700px) {
+    .account-util-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* Screener */
+.screener-page { display: flex; flex-direction: column; gap: 16px; }
+.screener-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+}
+.screener-title {
+    font-weight: 700;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.screener-filters { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
+.scr-filter {
+    background: var(--input-bg);
+    border: 1px solid var(--card-border);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 16px;
+    cursor: pointer;
+}
+.scr-filter.active {
+    background: var(--pill-active-bg);
+    color: var(--accent-blue);
+    border-color: transparent;
+}
+.screener-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-family: ui-monospace, monospace;
+    color: var(--text-muted);
+}
+.screener-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+@media (min-width: 1000px) {
+    .screener-grid {
+        display: grid;
+        grid-template-columns: 1.6fr 1fr;
+        gap: 16px;
+        align-items: start;
+    }
+}
+.screener-table-wrap { overflow-x: auto; padding: 0; }
+.scr-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+.scr-table th {
+    text-align: left;
+    padding: 10px 12px;
+    background: var(--table-header);
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-bottom: 1px solid var(--card-border);
+    position: sticky;
+    top: 0;
+}
+.scr-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--card-border);
+    color: var(--text-primary);
+}
+.scr-table tr { cursor: pointer; transition: background 0.12s; }
+.scr-table tr:hover, .scr-table tr.active-row { background: var(--input-bg); }
+.scr-table .sym { font-weight: 700; color: var(--accent-blue); }
+.scr-table .pos { color: var(--green-positive); font-weight: 700; }
+.scr-table .neg { color: var(--red-negative); font-weight: 700; }
+.screener-side { display: flex; flex-direction: column; gap: 12px; }
+
+.home-tas { margin-top: 0; }
+
+/* denser cards on desktop */
+@media (min-width: 900px) {
+    .sidebar { display: flex; flex-direction: column; }
+}
