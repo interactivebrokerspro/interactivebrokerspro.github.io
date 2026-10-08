@@ -778,7 +778,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let calYear = 2026, calMonth = 9;
     const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-    function formatPnL(v) { return (v >= 0 ? '+' : '') + '$' + Math.abs(v).toFixed(0); }
+    function formatPnL(v) {
+        const sign = v >= 0 ? '+' : '-';
+        const num = Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return sign + '$' + num;
+    }
     function dateKey(d) {
         return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
     }
@@ -847,8 +851,13 @@ document.addEventListener('DOMContentLoaded', () => {
             totalEl.textContent = (m.total >= 0 ? '+' : '') + '$' + Math.abs(m.total).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
             totalEl.className = 'stat-value ' + (m.total >= 0 ? 'positive' : 'negative');
         }
-        if (goalFill) goalFill.style.width = Math.min(100, Math.max(0, (m.total / 3000) * 100)) + '%';
-        if (goalCurrent) goalCurrent.textContent = '$' + Math.abs(Math.round(m.total));
+        // Goal bar: $0 → goal. Fill tracks progress (caps at 100%). Left label stays $0.
+        const monthGoal = 3000;
+        if (goalFill) {
+            const pct = m.total <= 0 ? 0 : Math.min(100, (m.total / monthGoal) * 100);
+            goalFill.style.width = pct + '%';
+        }
+        if (goalCurrent) goalCurrent.textContent = '$0';
     }
 
     function animateMonthChange(direction, updateFn) {
@@ -962,8 +971,12 @@ document.addEventListener('DOMContentLoaded', () => {
             totalEl.className = 'stat-value ' + (yearTotal >= 0 ? 'positive' : 'negative');
         }
         if (subEl) subEl.textContent = 'in ' + yearViewYear;
-        if (goalFill) goalFill.style.width = Math.min(100, Math.max(0, (yearTotal / 100000) * 100)) + '%';
-        if (goalCur) goalCur.textContent = '$' + Math.abs(Math.round(yearTotal)).toLocaleString();
+        const yearGoal = 100000;
+        if (goalFill) {
+            const pct = yearTotal <= 0 ? 0 : Math.min(100, (yearTotal / yearGoal) * 100);
+            goalFill.style.width = pct + '%';
+        }
+        if (goalCur) goalCur.textContent = '$0';
 
         grid.innerHTML = '';
         const shortNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -1002,7 +1015,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let pnlClass = 'zero';
             let pnlText = '$0.00';
             if (hasData) {
-                pnlText = (mStats.total >= 0 ? '$' : '-$') + Math.abs(mStats.total).toFixed(2);
+                pnlText = formatPnL(mStats.total);
                 pnlClass = mStats.total >= 0 ? 'positive' : 'negative';
             }
 
@@ -1060,6 +1073,135 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+
+    // --- MESSAGES DROPDOWN ---
+    const msgBtn = document.getElementById('msg-btn');
+    const msgDropdown = document.getElementById('msg-dropdown');
+    if (msgBtn && msgDropdown) {
+        msgBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            msgDropdown.classList.toggle('hidden');
+            if (notifDropdown) notifDropdown.classList.add('hidden');
+        });
+        document.addEventListener('click', (e) => {
+            if (!msgDropdown.contains(e.target) && !msgBtn.contains(e.target)) {
+                msgDropdown.classList.add('hidden');
+            }
+        });
+    }
+    document.getElementById('side-msg-btn')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        msgDropdown?.classList.remove('hidden');
+    });
+
+    // --- LIVE SCREENER ---
+    const scrData = {
+        gainers: null, // use DOM default
+        losers: [
+            {sym:'CRWV', last:'24.18', chg:'-3.20%', vol:'8.4M', bid:'24.15', ask:'24.22', spr:'0.07', rvol:'2.55x', neg:true},
+            {sym:'AAPL', last:'182.44', chg:'-0.82%', vol:'39.5M', bid:'182.42', ask:'182.46', spr:'0.04', rvol:'1.05x', neg:true},
+            {sym:'INTC', last:'22.10', chg:'-1.45%', vol:'41.2M', bid:'22.08', ask:'22.12', spr:'0.04', rvol:'1.60x', neg:true},
+            {sym:'BA', last:'178.40', chg:'-0.95%', vol:'6.1M', bid:'178.35', ask:'178.48', spr:'0.13', rvol:'1.12x', neg:true},
+            {sym:'PYPL', last:'64.22', chg:'-1.10%', vol:'9.8M', bid:'64.20', ask:'64.26', spr:'0.06', rvol:'1.33x', neg:true},
+        ],
+        volume: [
+            {sym:'TSLA', last:'198.52', chg:'+1.12%', vol:'62.1M', bid:'198.50', ask:'198.55', spr:'0.05', rvol:'1.22x'},
+            {sym:'NVDA', last:'450.21', chg:'+2.41%', vol:'48.2M', bid:'450.18', ask:'450.24', spr:'0.06', rvol:'1.84x'},
+            {sym:'SPY', last:'445.12', chg:'+0.75%', vol:'41.0M', bid:'445.10', ask:'445.14', spr:'0.04', rvol:'0.91x'},
+            {sym:'AAPL', last:'182.44', chg:'-0.82%', vol:'39.5M', bid:'182.42', ask:'182.46', spr:'0.04', rvol:'1.05x', neg:true},
+            {sym:'AMD', last:'112.50', chg:'+1.25%', vol:'31.4M', bid:'112.48', ask:'112.53', spr:'0.05', rvol:'1.41x'},
+        ],
+        futures: [
+            {sym:'MES', last:'5824.25', chg:'+0.18%', vol:'142k', bid:'5824.00', ask:'5824.50', spr:'0.50', rvol:'—'},
+            {sym:'MNQ', last:'20148.50', chg:'+0.32%', vol:'98k', bid:'20148.00', ask:'20149.00', spr:'1.00', rvol:'—'},
+            {sym:'ES', last:'5824.00', chg:'+0.18%', vol:'1.2M', bid:'5823.75', ask:'5824.25', spr:'0.50', rvol:'—'},
+            {sym:'NQ', last:'20148.00', chg:'+0.32%', vol:'0.9M', bid:'20147.50', ask:'20148.50', spr:'1.00', rvol:'—'},
+            {sym:'YM', last:'42210', chg:'+0.11%', vol:'85k', bid:'42208', ask:'42212', spr:'4', rvol:'—'},
+        ],
+        shariah: [
+            {sym:'AAPL', last:'182.44', chg:'-0.82%', vol:'39.5M', bid:'182.42', ask:'182.46', spr:'0.04', rvol:'1.05x', neg:true},
+            {sym:'MSFT', last:'428.15', chg:'+0.41%', vol:'15.3M', bid:'428.10', ask:'428.20', spr:'0.10', rvol:'0.79x'},
+            {sym:'NVDA', last:'450.21', chg:'+2.41%', vol:'48.2M', bid:'450.18', ask:'450.24', spr:'0.06', rvol:'1.84x'},
+            {sym:'MU', last:'98.74', chg:'+3.02%', vol:'22.8M', bid:'98.70', ask:'98.78', spr:'0.08', rvol:'2.10x'},
+            {sym:'AMD', last:'112.50', chg:'+1.25%', vol:'31.4M', bid:'112.48', ask:'112.53', spr:'0.05', rvol:'1.41x'},
+        ]
+    };
+
+    function renderScrRows(rows) {
+        const body = document.getElementById('scr-body');
+        if (!body || !rows) return;
+        body.innerHTML = rows.map(r => {
+            const cls = r.neg ? 'neg' : 'pos';
+            return `<tr data-sym="${r.sym}"><td class="sym">${r.sym}</td><td>${r.last}</td><td class="${cls}">${r.chg}</td><td>${r.vol}</td><td>${r.bid}</td><td>${r.ask}</td><td>${r.spr}</td><td>${r.rvol}</td></tr>`;
+        }).join('');
+        bindScrRows();
+    }
+
+    function bindScrRows() {
+        document.querySelectorAll('#scr-body tr').forEach(tr => {
+            tr.addEventListener('click', () => {
+                document.querySelectorAll('#scr-body tr').forEach(x => x.classList.remove('active-row'));
+                tr.classList.add('active-row');
+                const sym = tr.getAttribute('data-sym');
+                const lab = document.getElementById('scr-sym-label');
+                if (lab) lab.textContent = sym;
+            });
+        });
+    }
+    bindScrRows();
+
+    document.querySelectorAll('.scr-filter').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.scr-filter').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const key = btn.getAttribute('data-scr');
+            if (key === 'gainers') {
+                // restore default from first paint — re-click loads losers data inverse
+                location.hash = '';
+                // keep existing gainers rows if present; else volume
+                if (scrData.volume) renderScrRows([
+                    {sym:'MU', last:'98.74', chg:'+3.02%', vol:'22.8M', bid:'98.70', ask:'98.78', spr:'0.08', rvol:'2.10x'},
+                    {sym:'NVDA', last:'450.21', chg:'+2.41%', vol:'48.2M', bid:'450.18', ask:'450.24', spr:'0.06', rvol:'1.84x'},
+                    {sym:'AMD', last:'112.50', chg:'+1.25%', vol:'31.4M', bid:'112.48', ask:'112.53', spr:'0.05', rvol:'1.41x'},
+                    {sym:'TSLA', last:'198.52', chg:'+1.12%', vol:'62.1M', bid:'198.50', ask:'198.55', spr:'0.05', rvol:'1.22x'},
+                    {sym:'QQQ', last:'370.10', chg:'+0.95%', vol:'28.6M', bid:'370.08', ask:'370.12', spr:'0.04', rvol:'0.98x'},
+                    {sym:'SPY', last:'445.12', chg:'+0.75%', vol:'41.0M', bid:'445.10', ask:'445.14', spr:'0.04', rvol:'0.91x'},
+                    {sym:'META', last:'512.30', chg:'+0.64%', vol:'12.1M', bid:'512.20', ask:'512.40', spr:'0.20', rvol:'0.88x'},
+                    {sym:'MSFT', last:'428.15', chg:'+0.41%', vol:'15.3M', bid:'428.10', ask:'428.20', spr:'0.10', rvol:'0.79x'},
+                ]);
+            } else if (scrData[key]) {
+                renderScrRows(scrData[key]);
+            }
+        });
+    });
+
+    // Screener clock
+    setInterval(() => {
+        const el = document.getElementById('scr-clock');
+        if (!el) return;
+        const n = new Date();
+        // fake ET display
+        el.textContent = n.toLocaleTimeString('en-US', { hour12: false }) + ' ET';
+    }, 1000);
+
+    // Animate home + screener T&S
+    function tickTape(listId, basePx) {
+        const list = document.getElementById(listId);
+        if (!list) return;
+        const buy = Math.random() > 0.45;
+        const px = (basePx + (Math.random() - 0.5) * 0.4).toFixed(2);
+        const sz = [50,75,100,150,200,300,500,1000][Math.floor(Math.random()*8)];
+        const t = new Date();
+        const ts = t.toLocaleTimeString('en-US', { hour12: false });
+        const row = document.createElement('div');
+        row.className = 'tas-row ' + (buy ? 'buy' : 'sell');
+        row.innerHTML = `<span>${ts}</span><span>${px}</span><span>${sz.toLocaleString()}</span>`;
+        list.insertBefore(row, list.firstChild);
+        while (list.children.length > 12) list.removeChild(list.lastChild);
+    }
+    setInterval(() => tickTape('home-tas', 198.52), 1800);
+    setInterval(() => tickTape('tas-list', 450.21), 1400);
 
     // Init
     updateDisplay();
