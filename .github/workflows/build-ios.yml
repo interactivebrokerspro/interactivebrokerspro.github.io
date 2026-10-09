@@ -1,0 +1,59 @@
+name: Build InteractiveBrokers App
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Tools & Create Project
+        run: |
+          npm init -y
+          npm install @capacitor/core @capacitor/cli
+          npx cap init "InteractiveBrokers" "com.personal.interactivebrokers" --web-dir=.
+          npm install @capacitor/ios
+          npx cap add ios
+
+      - name: Inject Custom Icon
+        run: |
+          npm install -g @capacitor/assets
+          mkdir -p assets
+          if [ -f "icon.png" ]; then
+            cp icon.png assets/icon-only.png
+            cp icon.png assets/icon-foreground.png
+            cp icon.png assets/icon-background.png
+            cp icon.png assets/splash.png
+            npx capacitor-assets generate --ios
+          else
+            echo "Warning: icon.png not found. App will use default framework icon."
+          fi
+
+      - name: Sync Web Files to iOS Shell
+        run: |
+          npx cap sync ios
+
+      - name: Compile App Bundle
+        run: |
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace -scheme App -sdk iphoneos -configuration Release CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO clean build
+
+      - name: Package into IPA
+        run: |
+          mkdir -p Payload
+          mv ios/App/build/Release-iphoneos/App.app Payload/
+          zip -r InteractiveBrokers.ipa Payload
+
+      - name: Upload Finished App File
+        uses: actions/upload-artifact@v4
+        with:
+          name: InteractiveBrokers-iOS-Installer
+          path: InteractiveBrokers.ipa
