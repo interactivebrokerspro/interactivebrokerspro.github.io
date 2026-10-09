@@ -13,7 +13,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22' # Upgraded to fix the warning notice
 
       - name: Install Tools & Create Project
         run: |
@@ -40,6 +40,19 @@ jobs:
       - name: Sync Web Files to iOS Shell
         run: |
           npx cap sync ios
+
+      - name: Patch Podfile for No-Sign Build
+        run: |
+          echo "post_install do |installer|" >> ios/App/Podfile
+          echo "  installer.pods_project.targets.each do |target|" >> ios/App/Podfile
+          echo "    target.build_configurations.each do |config|" >> ios/App/Podfile
+          echo "      config.build_settings['EXPANDED_CODE_SIGN_IDENTITY'] = ''" >> ios/App/Podfile
+          echo "      config.build_settings['CODE_SIGNING_REQUIRED'] = 'NO'" >> ios/App/Podfile
+          echo "      config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'" >> ios/App/Podfile
+          echo "    end" >> ios/App/Podfile
+          echo "  end" >> ios/App/Podfile
+          echo "end" >> ios/App/Podfile
+          cd ios/App && pod update
 
       - name: Compile App Bundle
         run: |
