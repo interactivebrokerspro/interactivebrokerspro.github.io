@@ -27,21 +27,41 @@ document.addEventListener('DOMContentLoaded', () => {
     loginForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const enteredPassword = passwordInput.value.trim();
-
+        // Username field is cosmetic / paper alias — password still gates access
         if (enteredPassword === 'nabil') {
-            // Save current timestamp to enable persistent session
-            localStorage.setItem('ib_auth_timestamp', Date.now().toString());
-            
             loginError.classList.add('hidden');
-            loginScreen.classList.add('hidden');
-            passwordInput.value = '';
-            
-            // Resize active chart after login display
-            if (portfolioChart) portfolioChart.resize();
+            const btn = document.getElementById('login-btn');
+            const spin = document.getElementById('auth-spinner');
+            if (btn) btn.classList.add('hidden');
+            if (spin) {
+                spin.classList.remove('hidden');
+                const fill = spin.querySelector('.auth-spinner-fill');
+                if (fill) {
+                    fill.style.width = '0%';
+                    fill.style.transition = 'width 2.2s linear';
+                    requestAnimationFrame(() => { fill.style.width = '100%'; });
+                }
+            }
+            setTimeout(() => {
+                localStorage.setItem('ib_auth_timestamp', Date.now().toString());
+                loginScreen.classList.add('hidden');
+                passwordInput.value = '';
+                passwordInput.blur();
+                const u = document.getElementById('username-input');
+                if (u) u.blur();
+                if (btn) btn.classList.remove('hidden');
+                if (spin) spin.classList.add('hidden');
+                if (portfolioChart) portfolioChart.resize();
+            }, 2400);
         } else {
             loginError.classList.remove('hidden');
             passwordInput.focus();
         }
+    });
+
+    // iOS: prevent double-tap zoom on login controls
+    document.querySelectorAll('#login-screen input, #login-screen button').forEach(el => {
+        el.addEventListener('touchend', (ev) => { /* allow normal */ }, { passive: true });
     });
 
     passwordInput.addEventListener('input', () => {
@@ -65,8 +85,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const basePrincipal = 18500.0; 
     
     let portfolioState = {
-        balance: 67490.78,
-        changeAmount: 15661.08,
+        balance: 66273.29,
+        changeAmount: 16508.37,
         activeTimeframe: '1M'
     };
 
@@ -201,10 +221,139 @@ document.addEventListener('DOMContentLoaded', () => {
         '2026-11-30': { pnl: 1103, trades: 1 }
     };
 
+
+    // Session journal notes (hardcoded through Nov 30) — opened from calendar day tap
+    const DAY_NOTES = {
+        '2026-06-05': { instruments: 'NVDA', notes: 'Mean-reversion fade into prior day high worked cleanly.', tags: ['Breakout'], r: 1.92, vol: 240 },
+        '2026-06-08': { instruments: 'Shariah equity', notes: 'Opening-range breakout held through first hour; scaled out into VWAP.', tags: ['VWAP'], r: 0.37, vol: 100 },
+        '2026-06-09': { instruments: 'AMD', notes: 'Opening-range breakout held through first hour; scaled out into VWAP.', tags: ['Gap'], r: 0.6, vol: 240 },
+        '2026-06-10': { instruments: 'TSLA', notes: 'Opening-range breakout held through first hour; scaled out into VWAP.', tags: ['RS'], r: 2.06, vol: 160 },
+        '2026-06-11': { instruments: 'MES', notes: 'Stopped during volatility spike; rule-based exit honored.', tags: ['FOMC'], r: -0.45, vol: 160 },
+        '2026-06-12': { instruments: 'AAPL', notes: 'Opening-range breakout held through first hour; scaled out into VWAP.', tags: ['RS'], r: 0.72, vol: 240 },
+        '2026-06-15': { instruments: 'MNQ', notes: 'FOMC-related spike against position; daily loss well inside 2% cap.', tags: ['FOMC'], r: -0.9, vol: 240 },
+        '2026-06-16': { instruments: 'MES', notes: 'Two-leg structure: morning probe + afternoon add.', tags: ['VWAP'], r: 1.35, vol: 100 },
+        '2026-06-17': { instruments: 'QQQ', notes: 'Scalp into release, then runner on continuation.', tags: ['ORB'], r: 1.86, vol: 160 },
+        '2026-06-18': { instruments: 'TSLA', notes: 'Afternoon trend leg; no overnight residual.', tags: ['Breakout'], r: 0.96, vol: 240 },
+        '2026-06-19': { instruments: 'MES', notes: 'False breakout; flattened at max session risk.', tags: ['Stopped'], r: -0.62, vol: 160 },
+        '2026-06-22': { instruments: 'AMD', notes: 'Two-leg structure: morning probe + afternoon add.', tags: ['Trend'], r: 2.06, vol: 160 },
+        '2026-06-23': { instruments: 'SPY', notes: 'Chop around VWAP; cut early.', tags: ['Chop'], r: -0.85, vol: 240 },
+        '2026-06-24': { instruments: 'AMD', notes: 'Stopped during volatility spike; rule-based exit honored.', tags: ['False BO'], r: -0.37, vol: 100 },
+        '2026-06-25': { instruments: 'SPY', notes: 'Afternoon trend leg; no overnight residual.', tags: ['Trend'], r: 0.44, vol: 100 },
+        '2026-06-26': { instruments: 'MNQ', notes: 'Afternoon trend leg; no overnight residual.', tags: ['RS'], r: 0.58, vol: 240 },
+        '2026-06-29': { instruments: 'NVDA', notes: 'Opening-range breakout held through first hour; scaled out into VWAP.', tags: ['VWAP'], r: 1.31, vol: 100 },
+        '2026-06-30': { instruments: 'TSLA', notes: 'Opening-range breakout held through first hour; scaled out into VWAP.', tags: ['RS'], r: 2.22, vol: 160 },
+        '2026-07-01': { instruments: 'MU', notes: 'Scalp into release, then runner on continuation.', tags: ['Breakout'], r: 0.52, vol: 240 },
+        '2026-07-02': { instruments: 'MNQ scalp', notes: 'Trend continuation after economic data; limit fills preferred.', tags: ['ORB', 'Trend'], r: 0.63, vol: 100 },
+        '2026-07-03': { instruments: 'TSLA', notes: 'Relative-strength long in screened name; tight risk.', tags: ['Gap'], r: 0.53, vol: 160 },
+        '2026-07-06': { instruments: 'SPY', notes: 'Mean-reversion fade into prior day high worked cleanly.', tags: ['Trend'], r: 1.78, vol: 100 },
+        '2026-07-07': { instruments: 'MES + equity', notes: 'False breakout; flattened at max session risk.', tags: ['Stopped'], r: -0.93, vol: 100 },
+        '2026-07-08': { instruments: 'TSLA', notes: 'Trend continuation after economic data; limit fills preferred.', tags: ['ORB', 'Trend'], r: 2.01, vol: 240 },
+        '2026-07-09': { instruments: 'NVDA', notes: 'Scalp into release, then runner on continuation.', tags: ['ORB', 'Trend'], r: 1.59, vol: 160 },
+        '2026-07-10': { instruments: 'SPY', notes: 'Afternoon trend leg; no overnight residual.', tags: ['VWAP'], r: 1.04, vol: 240 },
+        '2026-07-13': { instruments: 'MNQ', notes: 'Afternoon trend leg; no overnight residual.', tags: ['Breakout'], r: 1.84, vol: 240 },
+        '2026-07-14': { instruments: 'MES/MNQ', notes: 'News whipsaw; no revenge size.', tags: ['Chop'], r: -0.38, vol: 240 },
+        '2026-07-15': { instruments: 'MU', notes: 'Relative-strength long in screened name; tight risk.', tags: ['ORB'], r: 0.52, vol: 100 },
+        '2026-07-16': { instruments: 'Shariah equity', notes: 'Opening-range breakout held through first hour; scaled out into VWAP.', tags: ['Gap'], r: 1.56, vol: 160 },
+        '2026-07-17': { instruments: 'NVDA', notes: 'Scalp into release, then runner on continuation.', tags: ['Gap'], r: 0.86, vol: 240 },
+        '2026-07-20': { instruments: 'TSLA', notes: 'Chop around VWAP; cut early.', tags: ['False BO'], r: -0.74, vol: 160 },
+        '2026-07-21': { instruments: 'MNQ scalp', notes: 'Relative-strength long in screened name; tight risk.', tags: ['VWAP'], r: 1.04, vol: 240 },
+        '2026-07-22': { instruments: 'MNQ', notes: 'Trend continuation after economic data; limit fills preferred.', tags: ['ORB', 'Trend'], r: 2.24, vol: 160 },
+        '2026-07-23': { instruments: 'MES + equity', notes: 'Scalp into release, then runner on continuation.', tags: ['VWAP'], r: 0.5, vol: 240 },
+        '2026-07-24': { instruments: 'MES', notes: 'News whipsaw; no revenge size.', tags: ['False BO'], r: -0.65, vol: 100 },
+        '2026-07-27': { instruments: 'Shariah equity', notes: 'Chop around VWAP; cut early.', tags: ['News'], r: -0.45, vol: 240 },
+        '2026-07-28': { instruments: 'MES + equity', notes: 'Relative-strength long in screened name; tight risk.', tags: ['Gap'], r: 2.21, vol: 240 },
+        '2026-07-29': { instruments: 'MES', notes: 'Chop around VWAP; cut early.', tags: ['News'], r: -0.66, vol: 100 },
+        '2026-07-30': { instruments: 'MES/MNQ', notes: 'Afternoon trend leg; no overnight residual.', tags: ['VWAP'], r: 2.22, vol: 240 },
+        '2026-07-31': { instruments: 'MU', notes: 'Opening-range breakout held through first hour; scaled out into VWAP.', tags: ['RS'], r: 0.63, vol: 100 },
+        '2026-08-03': { instruments: 'MNQ scalp', notes: 'Trend continuation after economic data; limit fills preferred.', tags: ['Trend'], r: 0.44, vol: 240 },
+        '2026-08-04': { instruments: 'MES + equity', notes: 'Mean-reversion fade into prior day high worked cleanly.', tags: ['Breakout'], r: 1.32, vol: 160 },
+        '2026-08-05': { instruments: 'AAPL', notes: 'Two-leg structure: morning probe + afternoon add.', tags: ['ORB', 'Trend'], r: 1.83, vol: 100 },
+        '2026-08-06': { instruments: 'MNQ', notes: 'Mean-reversion fade into prior day high worked cleanly.', tags: ['ORB', 'Trend'], r: 1.33, vol: 100 },
+        '2026-08-07': { instruments: 'AAPL', notes: 'FOMC-related spike against position; daily loss well inside 2% cap.', tags: ['News'], r: -0.34, vol: 100 },
+        '2026-08-10': { instruments: 'MES/MNQ', notes: 'Two-leg structure: morning probe + afternoon add.', tags: ['Breakout'], r: 0.98, vol: 100 },
+        '2026-08-11': { instruments: 'AMD', notes: 'Trend continuation after economic data; limit fills preferred.', tags: ['Breakout'], r: 0.43, vol: 240 },
+        '2026-08-12': { instruments: 'NVDA', notes: 'Scalp into release, then runner on continuation.', tags: ['Breakout'], r: 0.89, vol: 240 },
+        '2026-08-13': { instruments: 'QQQ', notes: 'False breakout; flattened at max session risk.', tags: ['Stopped'], r: -1.36, vol: 160 },
+        '2026-08-14': { instruments: 'MES/MNQ', notes: 'Mean-reversion fade into prior day high worked cleanly.', tags: ['RS'], r: 0.44, vol: 240 },
+        '2026-08-17': { instruments: 'Shariah equity', notes: 'Mean-reversion fade into prior day high worked cleanly.', tags: ['ORB'], r: 1.95, vol: 240 },
+        '2026-08-18': { instruments: 'MU', notes: 'FOMC-related spike against position; daily loss well inside 2% cap.', tags: ['Chop'], r: -0.45, vol: 100 },
+        '2026-08-19': { instruments: 'SPY', notes: 'Trend continuation after economic data; limit fills preferred.', tags: ['ORB'], r: 0.71, vol: 240 },
+        '2026-08-20': { instruments: 'MES/MNQ', notes: 'Relative-strength long in screened name; tight risk.', tags: ['Gap'], r: 0.5, vol: 100 },
+        '2026-08-21': { instruments: 'TSLA', notes: 'Afternoon trend leg; no overnight residual.', tags: ['Gap'], r: 1.05, vol: 100 },
+        '2026-08-24': { instruments: 'MES/MNQ', notes: 'FOMC-related spike against position; daily loss well inside 2% cap.', tags: ['False BO'], r: -0.37, vol: 100 },
+        '2026-08-25': { instruments: 'Shariah equity', notes: 'Scalp into release, then runner on continuation.', tags: ['ORB'], r: 1.42, vol: 160 },
+        '2026-08-26': { instruments: 'MU', notes: 'Two-leg structure: morning probe + afternoon add.', tags: ['Breakout'], r: 2.03, vol: 100 },
+        '2026-08-27': { instruments: 'AAPL', notes: 'Relative-strength long in screened name; tight risk.', tags: ['Breakout'], r: 0.53, vol: 240 },
+        '2026-08-28': { instruments: 'MNQ', notes: 'Relative-strength long in screened name; tight risk.', tags: ['Breakout'], r: 1.71, vol: 240 },
+        '2026-08-31': { instruments: 'MES', notes: 'Mean-reversion fade into prior day high worked cleanly.', tags: ['VWAP'], r: 0.36, vol: 240 },
+        '2026-09-01': { instruments: 'QQQ', notes: 'Chop around VWAP; cut early.', tags: ['Chop'], r: -0.77, vol: 100 },
+        '2026-09-02': { instruments: 'MNQ', notes: 'Trend continuation after economic data; limit fills preferred.', tags: ['ORB'], r: 0.62, vol: 240 },
+        '2026-09-03': { instruments: 'MNQ', notes: 'Opening-range breakout held through first hour; scaled out into VWAP.', tags: ['Trend'], r: 1.03, vol: 100 },
+        '2026-09-04': { instruments: 'AMD', notes: 'Opening-range breakout held through first hour; scaled out into VWAP.', tags: ['Gap'], r: 1.49, vol: 100 },
+        '2026-09-07': { instruments: 'TSLA', notes: 'Opening-range breakout held through first hour; scaled out into VWAP.', tags: ['VWAP'], r: 0.32, vol: 160 },
+        '2026-09-08': { instruments: 'QQQ', notes: 'Afternoon trend leg; no overnight residual.', tags: ['Breakout'], r: 0.51, vol: 160 },
+        '2026-09-09': { instruments: 'MES/MNQ', notes: 'Scalp into release, then runner on continuation.', tags: ['Scalp'], r: 1.39, vol: 160 },
+        '2026-09-10': { instruments: 'NVDA', notes: 'Afternoon trend leg; no overnight residual.', tags: ['Gap'], r: 0.5, vol: 100 },
+        '2026-09-11': { instruments: 'MU', notes: 'Opening-range breakout held through first hour; scaled out into VWAP.', tags: ['VWAP'], r: 0.6, vol: 100 },
+        '2026-09-14': { instruments: 'MU', notes: 'Relative-strength long in screened name; tight risk.', tags: ['ORB', 'Trend'], r: 2.81, vol: 160 },
+        '2026-09-15': { instruments: 'MU', notes: 'News whipsaw; no revenge size.', tags: ['Stopped'], r: -0.57, vol: 100 },
+        '2026-09-16': { instruments: 'MES/MNQ', notes: 'Opening-range breakout held through first hour; scaled out into VWAP.', tags: ['Gap'], r: 1.76, vol: 240 },
+        '2026-09-17': { instruments: 'MES + equity', notes: 'News whipsaw; no revenge size.', tags: ['FOMC'], r: -0.37, vol: 240 },
+        '2026-09-18': { instruments: 'MES + equity', notes: 'False breakout; flattened at max session risk.', tags: ['False BO'], r: -0.17, vol: 100 },
+        '2026-09-21': { instruments: 'MES', notes: 'Mean-reversion fade into prior day high worked cleanly.', tags: ['Gap'], r: 0.32, vol: 160 },
+        '2026-09-22': { instruments: 'MES/MNQ', notes: 'Scalp into release, then runner on continuation.', tags: ['ORB'], r: 1.26, vol: 240 },
+        '2026-09-23': { instruments: 'MNQ scalp', notes: 'Afternoon trend leg; no overnight residual.', tags: ['Scalp'], r: 2.54, vol: 160 },
+        '2026-09-24': { instruments: 'Shariah equity', notes: 'Stopped during volatility spike; rule-based exit honored.', tags: ['News'], r: -0.98, vol: 100 },
+        '2026-09-25': { instruments: 'AMD', notes: 'News whipsaw; no revenge size.', tags: ['Chop'], r: -0.17, vol: 240 },
+        '2026-09-28': { instruments: 'NVDA', notes: 'Two-leg structure: morning probe + afternoon add.', tags: ['RS'], r: 0.87, vol: 100 },
+        '2026-09-29': { instruments: 'AMD', notes: 'Afternoon trend leg; no overnight residual.', tags: ['Gap'], r: 2.03, vol: 100 },
+        '2026-09-30': { instruments: 'Shariah equity', notes: 'False breakout; flattened at max session risk.', tags: ['False BO'], r: -0.54, vol: 160 },
+        '2026-10-01': { instruments: 'MNQ scalp', notes: 'Two-leg structure: morning probe + afternoon add.', tags: ['RS'], r: 0.52, vol: 100 },
+        '2026-10-02': { instruments: 'MNQ scalp', notes: 'Mean-reversion fade into prior day high worked cleanly.', tags: ['Breakout'], r: 1.85, vol: 100 },
+        '2026-10-05': { instruments: 'MES + equity', notes: 'False breakout; flattened at max session risk.', tags: ['Chop'], r: -0.42, vol: 240 },
+        '2026-10-06': { instruments: 'AMD', notes: 'Relative-strength long in screened name; tight risk.', tags: ['Gap'], r: 17.0, vol: 240 },
+        '2026-10-07': { instruments: 'MES + equity', notes: 'Opening-range breakout held through first hour; scaled out into VWAP.', tags: ['ORB'], r: 1.44, vol: 160 },
+        '2026-10-08': { instruments: 'MNQ scalp', notes: 'News whipsaw; no revenge size.', tags: ['FOMC'], r: -0.98, vol: 160 },
+        '2026-10-09': { instruments: 'SPY', notes: 'Mean-reversion fade into prior day high worked cleanly.', tags: ['Gap'], r: 2.8, vol: 240 },
+        '2026-10-10': { instruments: 'MU', notes: 'Two-leg structure: morning probe + afternoon add.', tags: ['Gap'], r: 0.72, vol: 160 },
+        '2026-10-13': { instruments: 'NVDA', notes: 'Stopped during volatility spike; rule-based exit honored.', tags: ['Chop'], r: -0.8, vol: 160 },
+        '2026-10-14': { instruments: 'MNQ', notes: 'False breakout; flattened at max session risk.', tags: ['FOMC'], r: -1.22, vol: 100 },
+        '2026-10-15': { instruments: 'QQQ', notes: 'News whipsaw; no revenge size.', tags: ['Chop'], r: -0.87, vol: 160 },
+        '2026-10-16': { instruments: 'MU', notes: 'Afternoon trend leg; no overnight residual.', tags: ['ORB'], r: 1.46, vol: 100 },
+        '2026-10-20': { instruments: 'MU', notes: 'Scalp into release, then runner on continuation.', tags: ['Gap'], r: 0.95, vol: 160 },
+        '2026-10-21': { instruments: 'MNQ scalp', notes: 'Scalp into release, then runner on continuation.', tags: ['VWAP'], r: 1.65, vol: 160 },
+        '2026-10-22': { instruments: 'Shariah equity', notes: 'Opening-range breakout held through first hour; scaled out into VWAP.', tags: ['Breakout'], r: 1.63, vol: 160 },
+        '2026-10-23': { instruments: 'MNQ scalp', notes: 'Scalp into release, then runner on continuation.', tags: ['RS'], r: 0.84, vol: 160 },
+        '2026-10-27': { instruments: 'MU', notes: 'Mean-reversion fade into prior day high worked cleanly.', tags: ['Breakout'], r: 1.88, vol: 100 },
+        '2026-10-28': { instruments: 'MNQ scalp', notes: 'Scalp into release, then runner on continuation.', tags: ['Gap'], r: 0.84, vol: 240 },
+        '2026-10-29': { instruments: 'MNQ', notes: 'Chop around VWAP; cut early.', tags: ['FOMC'], r: -0.33, vol: 160 },
+        '2026-10-30': { instruments: 'AAPL', notes: 'Scalp into release, then runner on continuation.', tags: ['VWAP'], r: 0.93, vol: 240 },
+        '2026-11-02': { instruments: 'MES + equity', notes: 'Mean-reversion fade into prior day high worked cleanly.', tags: ['Trend'], r: 0.45, vol: 160 },
+        '2026-11-03': { instruments: 'MES/MNQ', notes: 'Opening-range breakout held through first hour; scaled out into VWAP.', tags: ['Trend'], r: 1.78, vol: 100 },
+        '2026-11-04': { instruments: 'TSLA', notes: 'Relative-strength long in screened name; tight risk.', tags: ['Trend'], r: 2.15, vol: 100 },
+        '2026-11-05': { instruments: 'TSLA', notes: 'FOMC-related spike against position; daily loss well inside 2% cap.', tags: ['FOMC'], r: -0.87, vol: 240 },
+        '2026-11-06': { instruments: 'Shariah equity', notes: 'Trend continuation after economic data; limit fills preferred.', tags: ['Trend'], r: 1.04, vol: 160 },
+        '2026-11-09': { instruments: 'AMD', notes: 'FOMC-related spike against position; daily loss well inside 2% cap.', tags: ['Chop'], r: -0.56, vol: 100 },
+        '2026-11-10': { instruments: 'MES', notes: 'Stopped during volatility spike; rule-based exit honored.', tags: ['Stopped'], r: -0.33, vol: 160 },
+        '2026-11-11': { instruments: 'AMD', notes: 'Scalp into release, then runner on continuation.', tags: ['Trend'], r: 1.09, vol: 240 },
+        '2026-11-12': { instruments: 'AAPL', notes: 'Two-leg structure: morning probe + afternoon add.', tags: ['RS'], r: 2.6, vol: 100 },
+        '2026-11-13': { instruments: 'QQQ', notes: 'Opening-range breakout held through first hour; scaled out into VWAP.', tags: ['Scalp'], r: 1.56, vol: 160 },
+        '2026-11-16': { instruments: 'QQQ', notes: 'Trend continuation after economic data; limit fills preferred.', tags: ['RS'], r: 0.56, vol: 160 },
+        '2026-11-17': { instruments: 'MNQ scalp', notes: 'Afternoon trend leg; no overnight residual.', tags: ['Gap'], r: 3.24, vol: 100 },
+        '2026-11-18': { instruments: 'SPY', notes: 'Afternoon trend leg; no overnight residual.', tags: ['Breakout'], r: 1.69, vol: 100 },
+        '2026-11-19': { instruments: 'MES/MNQ', notes: 'Opening-range breakout held through first hour; scaled out into VWAP.', tags: ['Gap'], r: 1.47, vol: 160 },
+        '2026-11-20': { instruments: 'MU', notes: 'Scalp into release, then runner on continuation.', tags: ['Breakout'], r: 1.16, vol: 160 },
+        '2026-11-23': { instruments: 'AMD', notes: 'Mean-reversion fade into prior day high worked cleanly.', tags: ['Trend'], r: 0.7, vol: 100 },
+        '2026-11-24': { instruments: 'AMD', notes: 'Afternoon trend leg; no overnight residual.', tags: ['ORB'], r: 1.21, vol: 160 },
+        '2026-11-25': { instruments: 'MU', notes: 'False breakout; flattened at max session risk.', tags: ['False BO'], r: -0.69, vol: 160 },
+        '2026-11-26': { instruments: 'MES', notes: 'Two-leg structure: morning probe + afternoon add.', tags: ['Trend'], r: 1.19, vol: 160 },
+        '2026-11-27': { instruments: 'MES/MNQ', notes: 'Mean-reversion fade into prior day high worked cleanly.', tags: ['ORB', 'Trend'], r: 1.55, vol: 100 },
+        '2026-11-30': { instruments: 'TSLA', notes: 'Scalp into release, then runner on continuation.', tags: ['VWAP'], r: 1.3, vol: 100 },
+    };
+
     // ===== BALANCE CURVE (PnL-linked, forced end $107,038.91) =====
-    const TARGET_BALANCE_TODAY = 67490.78;
+    // Live "today" balance is derived from system clock (see getEffectiveToday below).
     const TARGET_BALANCE_END = 107038.91;
-    const BALANCE_TODAY_KEY = '2026-10-07';
     const balanceByDate = {
         '2026-06-05': 19654.55,
         '2026-06-08': 19874.95,
@@ -335,26 +484,51 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function getBalanceOn(dateStr) {
         if (balanceByDate[dateStr] != null) return balanceByDate[dateStr];
-        let best = TARGET_BALANCE_TODAY;
-        Object.keys(balanceByDate).forEach(k => {
-            if (k <= dateStr) best = balanceByDate[k];
-        });
+        // walk backward to latest known balance on/before dateStr
+        const keys = Object.keys(balanceByDate).sort();
+        let best = keys.length ? balanceByDate[keys[0]] : 50000;
+        for (let i = 0; i < keys.length; i++) {
+            if (keys[i] <= dateStr) best = balanceByDate[keys[i]];
+            else break;
+        }
         return best;
     }
 
-    portfolioState.balance = TARGET_BALANCE_TODAY;
-    (function() {
-        let mtd = 0;
-        Object.keys(dailyPnL).forEach(k => {
-            if (k.startsWith('2026-10-') && k <= BALANCE_TODAY_KEY) mtd += dailyPnL[k].pnl;
-        });
-        portfolioState.changeAmount = Math.round(mtd * 100) / 100;
-    })();
+    // portfolioState balance + MTD are set after TODAY is resolved (see auto-date block below)
 
     function buildEquityCurve(daysBack) {
         const keys = Object.keys(balanceByDate).sort();
         const slice = keys.slice(-Math.min(daysBack, keys.length));
-        return slice.map(k => balanceByDate[k]);
+        const vals = slice.map(k => balanceByDate[k]);
+        if (vals.length < 6) return vals;
+        const n = vals.length;
+        const out = vals.slice();
+        // Structured pullbacks
+        const dipAt = [0.12, 0.27, 0.41, 0.55, 0.69, 0.82, 0.91].map(p => Math.floor(p * (n - 1)));
+        dipAt.forEach((i, idx) => {
+            if (i <= 0 || i >= n - 1) return;
+            const depth = 0.006 + (idx % 4) * 0.005;
+            const span = 1 + (idx % 3);
+            for (let j = Math.max(1, i - span); j <= Math.min(n - 2, i + span); j++) {
+                const t = 1 - Math.abs(j - i) / (span + 1);
+                out[j] = out[j] * (1 - depth * t);
+            }
+        });
+        // Micro noise / wiggles (deterministic from index so chart is stable across reloads)
+        for (let i = 1; i < n - 1; i++) {
+            const seed = ((i * 9301 + 49297) % 233280) / 233280; // 0..1
+            const wiggle = (seed - 0.5) * 0.0045; // ±0.225%
+            out[i] = out[i] * (1 + wiggle);
+            // occasional sharp 1-bar dip
+            if (seed > 0.92) out[i] = out[i] * 0.991;
+            if (seed < 0.07) out[i] = out[i] * 1.004;
+        }
+        // flat patches
+        [[0.33, 2], [0.61, 3], [0.78, 2]].forEach(([p, len]) => {
+            const s = Math.floor(p * (n - 1));
+            for (let j = s; j < Math.min(n - 1, s + len); j++) out[j] = out[s];
+        });
+        return out;
     }
 
     const chartDatasets = {
@@ -367,25 +541,35 @@ document.addEventListener('DOMContentLoaded', () => {
         'ALL': buildEquityCurve(200)
     };
 
-    function calculateSMA(data, period) {
-        let sma = [];
+    function calculateEMA(data, period) {
+        const ema = [];
+        const k = 2 / (period + 1);
+        let prev = null;
         for (let i = 0; i < data.length; i++) {
-            if (i < period - 1) {
-                sma.push(null);
-            } else {
-                let sum = 0;
-                for (let j = 0; j < period; j++) {
-                    sum += data[i - j];
+            const v = data[i];
+            if (v == null || isNaN(v)) { ema.push(null); continue; }
+            if (prev == null) {
+                // seed with SMA of first `period` points when available
+                if (i < period - 1) { ema.push(null); continue; }
+                let sum = 0, n = 0;
+                for (let j = i - period + 1; j <= i; j++) {
+                    if (data[j] != null) { sum += data[j]; n++; }
                 }
-                sma.push(sum / period);
+                prev = n ? sum / n : v;
+                ema.push(prev);
+            } else {
+                prev = v * k + prev * (1 - k);
+                ema.push(prev);
             }
         }
-        return sma;
+        return ema;
     }
+    // Keep alias so older call sites don't break
+    function calculateSMA(data, period) { return calculateEMA(data, period); }
 
     const currentData = chartDatasets['1M'];
-    const fastMA = calculateSMA(currentData, 3);
-    const slowMA = calculateSMA(currentData, 6);
+    const fastMA = calculateEMA(currentData, 9);
+    const slowMA = calculateEMA(currentData, 21);
 
     function getGradient(context) {
         const chart = context.chart;
@@ -571,8 +755,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const scaleFactor = portfolioState.balance / baseData[baseData.length - 1];
             const scaledData = baseData.map(val => val * scaleFactor);
 
-            const newFastMA = calculateSMA(scaledData, 3);
-            const newSlowMA = calculateSMA(scaledData, 6);
+            const newFastMA = calculateEMA(scaledData, 9);
+            const newSlowMA = calculateEMA(scaledData, 21);
 
             portfolioChart.data.labels = scaledData.map((_, i) => i);
             portfolioChart.data.datasets[0].data = scaledData;
@@ -610,8 +794,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const scaleFactor = newBal / baseData[baseData.length - 1];
             const scaledData = baseData.map(val => val * scaleFactor);
             
-            const newFastMA = calculateSMA(scaledData, 3);
-            const newSlowMA = calculateSMA(scaledData, 6);
+            const newFastMA = calculateEMA(scaledData, 9);
+            const newSlowMA = calculateEMA(scaledData, 21);
 
             portfolioChart.data.datasets[0].data = scaledData;
             portfolioChart.data.datasets[1].data = newFastMA;
@@ -708,6 +892,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (typeof equityChart !== 'undefined' && equityChart) equityChart.resize();
                 if (typeof renderCalendar === 'function') renderCalendar();
             }
+            if(target === 'view-journal') {
+                setTimeout(() => {
+                    if (typeof renderTradesVizJournal === 'function') renderTradesVizJournal();
+                }, 50);
+            }
         });
     });
 
@@ -773,9 +962,181 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    const TODAY = new Date(2026, 9, 7);
+    // =====================================================
+    // AUTO "TODAY" — follows the real system clock
+    // =====================================================
+    // A trading day's P&L unlocks at UNLOCK_HOUR local time (default 7 AM).
+    // Before that hour, "today" is still the previous session day.
+    // Set UNLOCK_HOUR = 0 for midnight unlock.
+    // All dailyPnL / balanceByDate rows through Nov 30 stay hardcoded;
+    // they only become visible once effective-today reaches that date.
+    const UNLOCK_HOUR = 7;
+
+    function dateKeyFromDate(d) {
+        return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    }
+
+    function getEffectiveToday() {
+        const now = new Date();
+        let d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        // Before unlock hour → still previous calendar day
+        if (now.getHours() < UNLOCK_HOUR) {
+            d.setDate(d.getDate() - 1);
+        }
+        // Weekends roll back to Friday (no weekend trading sessions)
+        while (d.getDay() === 0 || d.getDay() === 6) {
+            d.setDate(d.getDate() - 1);
+        }
+        // Clamp to live data range
+        const first = new Date(2026, 5, 5);
+        const lastKey = Object.keys(dailyPnL).sort().pop();
+        const last = lastKey
+            ? new Date(+lastKey.slice(0,4), +lastKey.slice(5,7) - 1, +lastKey.slice(8,10))
+            : d;
+        if (d < first) d = new Date(first);
+        if (d > last) d = new Date(last);
+        return d;
+    }
+
+    let TODAY = getEffectiveToday();
     const FIRST_TRADE = new Date(2026, 5, 5);
-    let calYear = 2026, calMonth = 9;
+
+    function syncStateToToday() {
+        const key = dateKeyFromDate(TODAY);
+        portfolioState.balance = getBalanceOn(key);
+        let mtd = 0;
+        const ym = key.slice(0, 7);
+        Object.keys(dailyPnL).forEach(k => {
+            if (k.startsWith(ym) && k <= key) mtd += dailyPnL[k].pnl;
+        });
+        portfolioState.changeAmount = Math.round(mtd * 100) / 100;
+    }
+    syncStateToToday();
+
+    // Order history: only show rows on/before effective today.
+    // Dates in the table are "Mon DD" (year 2026 implied).
+    const OH_MONTH = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
+    function filterOrderHistory() {
+        const todayKey = dateKeyFromDate(TODAY);
+        const rows = document.querySelectorAll('.order-table tbody tr');
+        let lastVisibleLabel = 'Jun 05';
+        rows.forEach(tr => {
+            const td = tr.querySelector('td');
+            if (!td) return;
+            const m = td.textContent.trim().match(/^([A-Za-z]+)\s+(\d{1,2})/);
+            if (!m) { tr.style.display = 'none'; return; }
+            const mon = OH_MONTH[m[1].slice(0, 3)];
+            if (mon == null) { tr.style.display = 'none'; return; }
+            const key = '2026-' + String(mon + 1).padStart(2, '0') + '-' + String(+m[2]).padStart(2, '0');
+            if (key > todayKey) {
+                tr.style.display = 'none';
+            } else {
+                tr.style.display = '';
+                lastVisibleLabel = m[1].slice(0, 3) + ' ' + String(+m[2]).padStart(2, '0');
+            }
+        });
+        // Cumulative net from dailyPnL (more accurate than summing table fills)
+        let cum = 0;
+        Object.keys(dailyPnL).forEach(k => {
+            if (k <= todayKey) cum += dailyPnL[k].pnl;
+        });
+        const header = document.querySelector('#view-order-history .widget-title h4');
+        if (header) {
+            header.innerHTML = '<i class="fa-solid fa-clock-rotate-left"></i> Order History (Jun 05 – ' + lastVisibleLabel + ', 2026)';
+        }
+        const totalSpan = document.querySelector('#view-order-history .widget-title span');
+        if (totalSpan) {
+            const sign = cum >= 0 ? '+' : '\u2013';
+            totalSpan.textContent = 'Total Net Profit: ' + sign + '$' + Math.abs(cum).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            totalSpan.style.color = cum >= 0 ? 'var(--green-positive)' : 'var(--red-negative)';
+        }
+    
+        const visible = document.querySelectorAll('.order-table tbody tr:not([style*="display: none"])').length;
+        const total = document.querySelectorAll('.order-table tbody tr').length;
+        const counter = document.getElementById('oh-counter');
+        if (counter) {
+            const shown = Math.min(visible, 25);
+            counter.textContent = visible
+                ? ('Showing 1–' + shown + ' of ' + visible + (total > visible ? ' (session)' : ''))
+                : 'No fills yet';
+        }
+        // leave scrollbar mid-ish on order history
+        const ohScroll = document.getElementById('order-history-scroll');
+        if (ohScroll && ohScroll.scrollHeight > ohScroll.clientHeight) {
+            ohScroll.scrollTop = Math.min(48, ohScroll.scrollHeight * 0.08);
+        }
+
+    }
+
+    // Keep static UI numbers (ticker, portfolio cards, account NLV) in sync
+    function syncStaticBalances() {
+        const bal = portfolioState.balance;
+        const balFmt = bal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const mtd = portfolioState.changeAmount;
+        const mtdFmt = (mtd >= 0 ? '+' : '\u2013') + '$' + Math.abs(mtd).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        document.querySelectorAll('#status-ticker .ticker-track span').forEach(sp => {
+            if (sp.textContent && sp.textContent.indexOf('NLV') === 0) {
+                sp.textContent = 'NLV $' + balFmt;
+            }
+        });
+        document.querySelectorAll('#view-portfolio .portfolio-header-stats .stat-card').forEach(card => {
+            const lab = card.querySelector('.stat-label');
+            const val = card.querySelector('.stat-value');
+            if (!lab || !val) return;
+            if (lab.textContent.indexOf('NLV') >= 0) {
+                val.textContent = '$' + balFmt;
+            }
+            if (lab.textContent.indexOf('Net Increase') >= 0) {
+                val.textContent = mtdFmt;
+                val.className = 'stat-value ' + (mtd >= 0 ? 'positive' : 'negative');
+            }
+        });
+        document.querySelectorAll('#view-profile .util-row').forEach(row => {
+            const spans = row.querySelectorAll('span');
+            if (spans.length >= 2 && spans[0].textContent.trim() === 'NLV') {
+                spans[1].textContent = '$' + balFmt;
+            }
+        });
+        document.querySelectorAll('.util-strip .util-row').forEach(row => {
+            const spans = row.querySelectorAll('span');
+            if (spans.length >= 2 && spans[0].textContent.indexOf('Realized MTD') >= 0) {
+                spans[1].textContent = mtdFmt;
+                spans[1].className = 'mono ' + (mtd >= 0 ? 'pos' : 'neg');
+            }
+        });
+        const ttStats = document.querySelectorAll('.tt-stats .tt-stat');
+        ttStats.forEach(st => {
+            const lab = st.querySelector('.tt-label');
+            const val = st.querySelector('.tt-val');
+            if (lab && val && lab.textContent.indexOf('Net Profit') >= 0) {
+                val.textContent = '$' + (bal / 1000).toFixed(1) + 'K';
+            }
+        });
+    }
+
+    function applyTodayRoll() {
+        syncStateToToday();
+        if (typeof updateDisplay === 'function') updateDisplay();
+        if (typeof renderCalendar === 'function') renderCalendar();
+        if (typeof renderWeekView === 'function' && typeof calMode !== 'undefined' && calMode === 'week') renderWeekView();
+        if (typeof renderYearView === 'function' && typeof calMode !== 'undefined' && calMode === 'year') renderYearView();
+        filterOrderHistory();
+        syncStaticBalances();
+    }
+
+    // Auto-refresh when the day rolls over while the tab is open (checks every 30s)
+    setInterval(() => {
+        const next = getEffectiveToday();
+        if (dateKeyFromDate(next) !== dateKeyFromDate(TODAY)) {
+            TODAY = next;
+            calYear = TODAY.getFullYear();
+            calMonth = TODAY.getMonth();
+            applyTodayRoll();
+        }
+    }, 30 * 1000);
+
+    let calYear = TODAY.getFullYear(), calMonth = TODAY.getMonth();
     const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
     function formatPnL(v) {
@@ -803,6 +1164,49 @@ document.addEventListener('DOMContentLoaded', () => {
         return { total, trades, days };
     }
 
+
+    function openDayDetail(key) {
+        const modal = document.getElementById('day-detail-modal');
+        if (!modal) return;
+        const data = dailyPnL[key] || { pnl: 0, trades: 0 };
+        const note = DAY_NOTES[key] || {};
+        const parts = key.split('-').map(Number);
+        const dt = new Date(parts[0], parts[1] - 1, parts[2]);
+        const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const dateStr = days[dt.getDay()] + ', ' + months[dt.getMonth()] + ' ' + parts[2] + ', ' + parts[0];
+
+        const pnlEl = document.getElementById('dd-pnl');
+        const dateEl = document.getElementById('dd-date');
+        if (dateEl) dateEl.textContent = dateStr;
+        if (pnlEl) {
+            pnlEl.textContent = formatPnL(data.pnl);
+            pnlEl.className = 'day-detail-pnl ' + (data.pnl >= 0 ? 'pos' : 'neg');
+        }
+        const set = (id, v) => { const n = document.getElementById(id); if (n) n.textContent = v; };
+        set('dd-trades', String(data.trades || 0));
+        set('dd-vol', String(note.vol != null ? note.vol : '—'));
+        set('dd-wl', data.pnl >= 0 ? '1 / 0' : '0 / 1');
+        set('dd-r', note.r != null ? ((note.r >= 0 ? '+' : '') + note.r + 'R') : '—');
+        set('dd-notes', note.notes || 'No session notes logged.');
+        set('dd-instruments', note.instruments || '—');
+        const tagsEl = document.getElementById('dd-tags');
+        if (tagsEl) {
+            const tags = note.tags || [];
+            tagsEl.innerHTML = tags.map(t => {
+                const cls = /stop|loss|chop|news|fomc|false/i.test(t) ? 'red' : (/orb|trend|vwap|break|rs|gap|scalp/i.test(t) ? 'green' : 'blue');
+                return '<span class="day-tag ' + cls + '">' + t + '</span>';
+            }).join('') || '<span class="day-tag">—</span>';
+        }
+        modal.classList.add('active');
+    }
+    document.getElementById('dd-close')?.addEventListener('click', () => {
+        document.getElementById('day-detail-modal')?.classList.remove('active');
+    });
+    document.getElementById('day-detail-modal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'day-detail-modal') e.target.classList.remove('active');
+    });
+
     function renderCalendar() {
         const grid = document.getElementById('cal-grid');
         const title = document.getElementById('cal-month-title');
@@ -813,36 +1217,67 @@ document.addEventListener('DOMContentLoaded', () => {
         prevBtn.disabled = (calYear === 2026 && calMonth <= 5);
         nextBtn.disabled = (calYear === TODAY.getFullYear() && calMonth >= TODAY.getMonth());
         grid.innerHTML = '';
+
+        // TradesViz-style full week grid (Sun–Sat)
         const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
-        const cells = [];
+        const firstDow = new Date(calYear, calMonth, 1).getDay(); // 0=Sun
+        // leading empties from previous month visual
+        for (let i = 0; i < firstDow; i++) {
+            const s = document.createElement('div');
+            s.className = 'cal-day cal-day-out';
+            grid.appendChild(s);
+        }
         for (let d = 1; d <= daysInMonth; d++) {
             const date = new Date(calYear, calMonth, d);
             const dow = date.getDay();
-            if (dow === 0 || dow === 6) continue;
-            const key = calYear + '-' + String(calMonth+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
-            cells.push({ day: d, data: dailyPnL[key], isFuture: date > TODAY, isBeforeStart: date < FIRST_TRADE });
-        }
-        if (cells.length) {
-            const firstDow = new Date(calYear, calMonth, cells[0].day).getDay();
-            const pad = firstDow === 0 ? 0 : firstDow - 1;
-            for (let i = 0; i < pad; i++) {
-                const s = document.createElement('div'); s.className = 'cal-day weekend-spacer'; grid.appendChild(s);
-            }
-        }
-        cells.forEach(c => {
-            const el = document.createElement('div'); el.className = 'cal-day';
-            if (c.isFuture || c.isBeforeStart) {
+            const key = calYear + '-' + String(calMonth + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+            const data = dailyPnL[key];
+            const isWeekend = dow === 0 || dow === 6;
+            const isFuture = date > TODAY;
+            const isBefore = date < FIRST_TRADE;
+            const el = document.createElement('div');
+            el.className = 'cal-day';
+
+            // Always mark Sat/Sun so they never pick up weekday empty/future box shade
+            if (isWeekend) el.classList.add('weekend');
+
+            if (isWeekend && (!data || !data.trades)) {
+                if (isFuture || isBefore) el.classList.add('future');
+                el.innerHTML = '<span class="cal-day-num">' + d + '</span>';
+            } else if (isFuture || isBefore) {
                 el.classList.add('future');
-                el.innerHTML = '<span class="cal-day-num">' + c.day + '</span><span class="cal-day-pnl">—</span>';
-            } else if (!c.data || !c.data.trades) {
+                el.innerHTML = '<span class="cal-day-num">' + d + '</span>';
+            } else if (!data || !data.trades) {
                 el.classList.add('empty');
-                el.innerHTML = '<span class="cal-day-num">' + c.day + '</span><span class="cal-day-pnl">—</span>';
+                el.innerHTML = '<span class="cal-day-num">' + d + '</span>';
             } else {
-                el.classList.add(c.data.pnl >= 0 ? 'win' : 'loss', 'has-data');
-                el.innerHTML = '<span class="cal-day-num">' + c.day + '</span><span class="cal-day-pnl">' + formatPnL(c.data.pnl) + '</span><span class="cal-day-trades">' + c.data.trades + ' trade' + (c.data.trades > 1 ? 's' : '') + '</span>';
+                const win = data.pnl >= 0;
+                el.classList.add(win ? 'win' : 'loss', 'has-data');
+                const trades = data.trades || 0;
+                const note = DAY_NOTES[key] || {};
+                const volTag = note.vol != null ? note.vol : (trades <= 1 ? trades * 100 : trades * 80);
+                const w = win ? 1 : 0;
+                const l = win ? 0 : 1;
+                el.innerHTML =
+                    '<div class="cal-day-top"><span class="cal-day-num">' + d + '</span></div>' +
+                    '<span class="cal-day-pnl">' + formatPnL(data.pnl) + '</span>' +
+                    '<span class="cal-day-meta">Vol: ' + volTag + ' · Tr: ' + trades + '</span>' +
+                    '<span class="cal-day-wl">W' + w + ' / L' + l + '</span>';
+                el.setAttribute('data-date', key);
+                el.addEventListener('click', () => openDayDetail(key));
             }
+            if (dateKey(date) === dateKey(TODAY)) el.classList.add('today');
             grid.appendChild(el);
-        });
+        }
+        // trailing cells to complete last week row
+        const totalCells = firstDow + daysInMonth;
+        const trailing = (7 - (totalCells % 7)) % 7;
+        for (let i = 0; i < trailing; i++) {
+            const s = document.createElement('div');
+            s.className = 'cal-day cal-day-out';
+            grid.appendChild(s);
+        }
+
         const m = getMonthPnL(calYear, calMonth);
         const totalEl = document.getElementById('cal-total-pnl');
         const goalFill = document.getElementById('goal-bar-fill');
@@ -920,7 +1355,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let calMode = 'month';
     let yearViewYear = 2026;
 
-    // Monday of the week that contains TODAY (Oct 7 2026 → Mon Oct 5)
+    // Monday of the week that contains TODAY (Oct 8 2026 → Mon Oct 5)
     function getMonday(d) {
         const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
         const day = x.getDay(); // 0=Sun
@@ -1320,26 +1755,385 @@ document.addEventListener('DOMContentLoaded', () => {
         el.textContent = n.toLocaleTimeString('en-US', { hour12: false }) + ' ET';
     }, 1000);
 
-    // Animate home + screener T&S
-    function tickTape(listId, basePx) {
+    // Animate home + screener T&S — irregular sizes, odd lots, occasional outside print
+    const ODD_SIZES = [7, 12, 25, 37, 48, 50, 63, 75, 88, 100, 125, 150, 173, 200, 250, 300, 400, 500, 650, 800, 1000, 1200, 2500];
+    function tickTape(listId, basePx, bidAsk) {
         const list = document.getElementById(listId);
         if (!list) return;
-        const buy = Math.random() > 0.45;
-        const px = (basePx + (Math.random() - 0.5) * 0.4).toFixed(2);
-        const sz = [50,75,100,150,200,300,500,1000][Math.floor(Math.random()*8)];
+        const buy = Math.random() > 0.47;
+        let px = basePx + (Math.random() - 0.5) * 0.35;
+        // ~8% chance of a print slightly outside the spread (microstructure noise)
+        if (bidAsk && Math.random() < 0.08) {
+            px = buy ? bidAsk.ask + 0.01 + Math.random() * 0.03 : bidAsk.bid - 0.01 - Math.random() * 0.03;
+        }
+        px = px.toFixed(2);
+        const sz = ODD_SIZES[Math.floor(Math.random() * ODD_SIZES.length)];
         const t = new Date();
         const ts = t.toLocaleTimeString('en-US', { hour12: false });
         const row = document.createElement('div');
         row.className = 'tas-row ' + (buy ? 'buy' : 'sell');
         row.innerHTML = `<span>${ts}</span><span>${px}</span><span>${sz.toLocaleString()}</span>`;
         list.insertBefore(row, list.firstChild);
-        while (list.children.length > 12) list.removeChild(list.lastChild);
+        while (list.children.length > 11) list.removeChild(list.lastChild); // leave partial cut-off
     }
-    setInterval(() => tickTape('home-tas', 198.52), 1800);
-    setInterval(() => tickTape('tas-list', 450.21), 1400);
+    // Staggered intervals so panels don't update in perfect lockstep
+    setInterval(() => tickTape('home-tas', 198.52, { bid: 198.45, ask: 198.50 }), 1650 + Math.random() * 400);
+    setInterval(() => tickTape('tas-list', 450.21, { bid: 450.18, ask: 450.24 }), 1280 + Math.random() * 350);
+
+    // ----- Session realism: latency flicker, L2 lag, BP micro-moves, ticker stale -----
+    (function sessionRealism() {
+        const latEl = document.getElementById('conn-latency');
+        const tickLat = document.getElementById('ticker-latency');
+        const loginLat = document.getElementById('login-latency');
+        const toast = document.getElementById('session-toast');
+        function showToast(msg, ms) {
+            if (!toast) return;
+            toast.textContent = msg;
+            toast.classList.remove('hidden');
+            clearTimeout(showToast._t);
+            showToast._t = setTimeout(() => toast.classList.add('hidden'), ms || 1400);
+        }
+        const bpRows = [];
+        document.querySelectorAll('.util-row, .util-strip .util-row').forEach(r => {
+            const s = r.querySelectorAll('span');
+            if (s.length >= 2 && /Buying Power|Excess Liq/i.test(s[0].textContent)) bpRows.push(s[1]);
+        });
+
+        function jitterLatency() {
+            // 34–58 ms, biased around 42
+            const ms = Math.round(38 + Math.random() * 18 + (Math.random() < 0.15 ? Math.random() * 12 : 0));
+            if (latEl) latEl.textContent = ms + ' ms · Chicago';
+            if (tickLat) tickLat.textContent = String(ms);
+            if (loginLat) loginLat.textContent = ms + ' ms';
+            const gw = document.getElementById('ticker-gateway');
+            if (gw && Math.random() < 0.06) {
+                gw.classList.remove('pos');
+                gw.style.color = '#f59e0b';
+                showToast('Market data farm connection is OK', 1100);
+                setTimeout(() => { gw.classList.add('pos'); gw.style.color = ''; }, 900 + Math.random() * 300);
+            }
+            // Fills today micro-tick (session activity)
+            document.querySelectorAll('.util-strip .util-row').forEach(row => {
+                const spans = row.querySelectorAll('span');
+                if (spans.length >= 2 && /Fills today/i.test(spans[0].textContent)) {
+                    if (Math.random() < 0.08) {
+                        const n = parseInt(spans[1].textContent, 10) || 0;
+                        if (n < 12) spans[1].textContent = String(n + 1);
+                    }
+                }
+            });
+        }
+        setInterval(jitterLatency, 2200 + Math.random() * 1800);
+        jitterLatency();
+
+        // Level 2 slight lag / imbalance pulse
+        const l2 = document.querySelector('.l2-widget');
+        setInterval(() => {
+            if (!l2) return;
+            l2.classList.add('lagging');
+            setTimeout(() => l2.classList.remove('lagging'), 600);
+            // nudge a random size (already handled by animateLevel2) + occasional large ask
+            const sells = document.querySelectorAll('.l2-col:last-child .size-val');
+            if (sells.length && Math.random() < 0.25) {
+                const el = sells[Math.floor(Math.random() * sells.length)];
+                el.textContent = String(Math.max(50, parseInt(el.textContent, 10) + Math.floor(Math.random() * 400 - 80)));
+            }
+        }, 3100);
+
+        // Buying power / excess liq micro-flicker (margin recalc)
+        setInterval(() => {
+            bpRows.forEach(el => {
+                const raw = el.textContent.replace(/[^0-9.]/g, '');
+                let v = parseFloat(raw);
+                if (isNaN(v)) return;
+                v += (Math.random() - 0.5) * 18; // ±$9-ish
+                el.textContent = '$' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            });
+        }, 4800);
+
+        // Ticker strip: mark some symbols stale briefly
+        setInterval(() => {
+            const spans = document.querySelectorAll('#status-ticker .ticker-track span');
+            spans.forEach(s => s.classList.remove('stale'));
+            if (spans.length) {
+                const n = 1 + Math.floor(Math.random() * 3);
+                for (let i = 0; i < n; i++) {
+                    const s = spans[Math.floor(Math.random() * spans.length)];
+                    if (s) s.classList.add('stale');
+                }
+            }
+        }, 1600);
+
+        // Focus / hover residue — looks like a real cursor was on the page
+        const buyBtn = document.querySelector('.buy-btn');
+        const residueTargets = () => [
+            buyBtn,
+            document.querySelector('.scr-table tbody tr'),
+            document.querySelector('.movers-list li'),
+            document.querySelector('.l2-row'),
+            document.querySelector('.side-link.active'),
+            document.querySelector('.cal-range-pill.active'),
+            document.querySelector('.tv-open-btn')
+        ].filter(Boolean);
+
+        function flashResidue() {
+            document.querySelectorAll('.ui-residue').forEach(el => el.classList.remove('ui-residue'));
+            const list = residueTargets();
+            if (!list.length) return;
+            const el = list[Math.floor(Math.random() * list.length)];
+            el.classList.add('ui-residue');
+            setTimeout(() => el.classList.remove('ui-residue'), 1800 + Math.random() * 1600);
+        }
+        setInterval(flashResidue, 9000 + Math.random() * 6000);
+        setTimeout(flashResidue, 2500);
+        if (buyBtn) {
+            setInterval(() => {
+                if (window.innerWidth < 900) return;
+                buyBtn.classList.add('has-focus');
+                setTimeout(() => buyBtn.classList.remove('has-focus'), 2000 + Math.random() * 1200);
+            }, 13000);
+        }
+    })();
+
+    function updateChartAsof() {
+        const el = document.getElementById('chart-asof');
+        if (!el) return;
+        const n = new Date();
+        const hh = String(n.getHours()).padStart(2, '0');
+        const mm = String(n.getMinutes()).padStart(2, '0');
+        el.textContent = 'as of ' + hh + ':' + mm + ' ET';
+    }
+    setInterval(updateChartAsof, 30000);
+    updateChartAsof();
+
+    // News meta relative clock
+    function refreshNewsMeta() {
+        const meta = document.getElementById('news-meta');
+        if (!meta) return;
+        const n = new Date();
+        // keep fixed story time relative feel: "today" HH:MM:SS
+        const hh = String(Math.min(n.getHours(), 15)).padStart(2, '0');
+        const mm = String(n.getMinutes()).padStart(2, '0');
+        const ss = String(n.getSeconds()).padStart(2, '0');
+        meta.innerHTML = '<span class="news-src">Reuters</span> · ' + hh + ':' + mm + ':' + ss + ' ET';
+    }
+    setInterval(refreshNewsMeta, 15000);
+
+
+    // =====================================================
+    // TRADESVIZ JOURNAL (embedded quant analytics)
+    // =====================================================
+    let tvCharts = {};
+
+    function buildTvSeries() {
+        const todayKey = (typeof dateKeyFromDate === 'function' && typeof TODAY !== 'undefined')
+            ? dateKeyFromDate(TODAY)
+            : '2026-10-08';
+        const keys = Object.keys(dailyPnL).filter(k => k <= todayKey).sort();
+        const labels = keys.map(k => k.slice(5));
+        const daily = keys.map(k => dailyPnL[k].pnl);
+        const vol = keys.map(k => dailyPnL[k].trades || 0);
+        let cum = 0;
+        const cumulative = daily.map(v => (cum += v));
+        let wins = 0, losses = 0, winDays = 0, lossDays = 0;
+        const scores = [];
+        let runWR = [];
+        daily.forEach((v, i) => {
+            if (v >= 0) { wins++; winDays++; } else { losses++; lossDays++; }
+            const total = wins + losses;
+            runWR.push(total ? (wins / total) * 100 : 50);
+            // simple "score" proxy: rolling 5-day avg of sign
+            const start = Math.max(0, i - 4);
+            const slice = daily.slice(start, i + 1);
+            const s = slice.reduce((a, b) => a + (b >= 0 ? 1 : -1), 0);
+            scores.push(s);
+        });
+        return { keys, labels, daily, vol, cumulative, wins, losses, winDays, lossDays, runWR, scores };
+    }
+
+    function tvChartDefaults() {
+        const grid = 'rgba(148,163,184,0.08)';
+        const tick = '#64748b';
+        return {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(15,20,25,0.95)',
+                    borderColor: '#334155',
+                    borderWidth: 1,
+                    titleFont: { size: 11 },
+                    bodyFont: { size: 12, family: 'monospace' }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { color: grid },
+                    ticks: { color: tick, maxTicksLimit: 5, font: { size: 9 } }
+                },
+                y: {
+                    grid: { color: grid },
+                    ticks: { color: tick, font: { size: 9, family: 'monospace' } }
+                }
+            }
+        };
+    }
+
+    function renderTradesVizJournal() {
+        const s = buildTvSeries();
+        const n = s.daily.length || 1;
+        const total = s.cumulative.length ? s.cumulative[s.cumulative.length - 1] : 0;
+        const avgDay = total / n;
+        const avgVol = s.vol.reduce((a, b) => a + b, 0) / n;
+        const pnlVol = avgVol ? total / (avgVol * n) : 0;
+        const winRate = (s.wins + s.losses) ? (s.wins / (s.wins + s.losses)) * 100 : 0;
+        const avgWins = s.winDays ? (s.daily.filter(v => v >= 0).reduce((a, b) => a + b, 0) / s.winDays) : 0;
+        const avgLoss = s.lossDays ? (Math.abs(s.daily.filter(v => v < 0).reduce((a, b) => a + b, 0)) / s.lossDays) : 0;
+        const high = s.scores.length ? Math.max(...s.scores) : 0;
+        const low = s.scores.length ? Math.min(...s.scores) : 0;
+        const pct = (total / 50000) * 100;
+
+        const fmt = (v, d=2) => (v >= 0 ? '+' : '–') + '$' + Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+        const el = (id, t) => { const n = document.getElementById(id); if (n) n.textContent = t; };
+
+        el('tv-avg-day', fmt(avgDay));
+        el('tv-win-days', String(s.winDays));
+        el('tv-loss-days', String(s.lossDays));
+        el('tv-total-pnl', fmt(total));
+        el('tv-pnl-pct', (pct >= 0 ? '↑ ' : '↓ ') + Math.abs(pct).toFixed(1) + '%');
+        el('tv-avg-vol', avgVol.toFixed(2));
+        el('tv-pnl-vol', fmt(pnlVol));
+        el('tv-avg-wins', (avgWins / 1000).toFixed(2));
+        el('tv-avg-losses', (avgLoss / 1000).toFixed(2));
+        el('tv-winrate', winRate.toFixed(0) + '%');
+        el('tv-wins', String(s.wins));
+        el('tv-losses', String(s.losses));
+        el('tv-high', String(high));
+        el('tv-low', String(low));
+
+        const opts = tvChartDefaults();
+        const destroy = (k) => { if (tvCharts[k]) { tvCharts[k].destroy(); tvCharts[k] = null; } };
+
+        // Daily PnL bar (green/red)
+        const c1 = document.getElementById('tvChartDaily');
+        if (c1) {
+            destroy('daily');
+            tvCharts.daily = new Chart(c1.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: s.labels,
+                    datasets: [{
+                        data: s.daily,
+                        backgroundColor: s.daily.map(v => v >= 0 ? 'rgba(52,211,153,0.75)' : 'rgba(248,113,113,0.75)'),
+                        borderWidth: 0,
+                        borderRadius: 2
+                    }]
+                },
+                options: opts
+            });
+        }
+
+        // Cumulative area
+        const c2 = document.getElementById('tvChartCum');
+        if (c2) {
+            destroy('cum');
+            const ctx = c2.getContext('2d');
+            const g = ctx.createLinearGradient(0, 0, 0, 180);
+            g.addColorStop(0, 'rgba(52,211,153,0.35)');
+            g.addColorStop(1, 'rgba(52,211,153,0.02)');
+            tvCharts.cum = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: s.labels,
+                    datasets: [{
+                        data: s.cumulative,
+                        borderColor: '#34d399',
+                        backgroundColor: g,
+                        fill: true,
+                        tension: 0.15,
+                        pointRadius: 0,
+                        borderWidth: 2
+                    }]
+                },
+                options: opts
+            });
+        }
+
+        // Volume bars
+        const c3 = document.getElementById('tvChartVol');
+        if (c3) {
+            destroy('vol');
+            tvCharts.vol = new Chart(c3.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: s.labels,
+                    datasets: [{
+                        data: s.vol,
+                        backgroundColor: 'rgba(59,130,246,0.7)',
+                        borderWidth: 0,
+                        borderRadius: 2
+                    }]
+                },
+                options: opts
+            });
+        }
+
+        // Win rate line
+        const c4 = document.getElementById('tvChartWR');
+        if (c4) {
+            destroy('wr');
+            tvCharts.wr = new Chart(c4.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: s.labels,
+                    datasets: [{
+                        data: s.runWR,
+                        borderColor: '#34d399',
+                        tension: 0.2,
+                        pointRadius: 0,
+                        borderWidth: 2,
+                        fill: false
+                    }]
+                },
+                options: {
+                    ...opts,
+                    scales: {
+                        ...opts.scales,
+                        y: { ...opts.scales.y, min: 0, max: 100 }
+                    }
+                }
+            });
+        }
+
+        // Score
+        const c5 = document.getElementById('tvChartScore');
+        if (c5) {
+            destroy('score');
+            tvCharts.score = new Chart(c5.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: s.labels,
+                    datasets: [{
+                        data: s.scores,
+                        borderColor: '#60a5fa',
+                        tension: 0.2,
+                        pointRadius: 0,
+                        borderWidth: 2,
+                        fill: false
+                    }]
+                },
+                options: opts
+            });
+        }
+    }
+
 
     // Init
     updateDisplay();
     animateLevel2();
     renderCalendar();
+    filterOrderHistory();
+    syncStaticBalances();
+    updateChartAsof();
 });
