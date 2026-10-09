@@ -13,7 +13,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22' # Upgraded to fix the warning notice
+          node-version: '22'
 
       - name: Install Tools & Create Project
         run: |
@@ -41,28 +41,23 @@ jobs:
         run: |
           npx cap sync ios
 
-      - name: Patch Podfile for No-Sign Build
-        run: |
-          echo "post_install do |installer|" >> ios/App/Podfile
-          echo "  installer.pods_project.targets.each do |target|" >> ios/App/Podfile
-          echo "    target.build_configurations.each do |config|" >> ios/App/Podfile
-          echo "      config.build_settings['EXPANDED_CODE_SIGN_IDENTITY'] = ''" >> ios/App/Podfile
-          echo "      config.build_settings['CODE_SIGNING_REQUIRED'] = 'NO'" >> ios/App/Podfile
-          echo "      config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'" >> ios/App/Podfile
-          echo "    end" >> ios/App/Podfile
-          echo "  end" >> ios/App/Podfile
-          echo "end" >> ios/App/Podfile
-          cd ios/App && pod update
-
-      - name: Compile App Bundle
+      - name: Build Unsigned Xcode Archive
         run: |
           cd ios/App
-          xcodebuild -workspace App.xcworkspace -scheme App -sdk iphoneos -configuration Release CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO clean build
+          xcodebuild -workspace App.xcworkspace \
+                     -scheme App \
+                     -configuration Release \
+                     -destination 'generic/platform=iOS' \
+                     clean archive \
+                     -archivePath unsigned.xcarchive \
+                     CODE_SIGN_IDENTITY="" \
+                     CODE_SIGNING_REQUIRED=NO \
+                     CODE_SIGNING_ALLOWED=NO
 
-      - name: Package into IPA
+      - name: Package Archive into IPA
         run: |
           mkdir -p Payload
-          mv ios/App/build/Release-iphoneos/App.app Payload/
+          cp -R ios/App/unsigned.xcarchive/Products/Applications/App.app Payload/
           zip -r InteractiveBrokers.ipa Payload
 
       - name: Upload Finished App File
