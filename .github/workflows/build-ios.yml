@@ -15,50 +15,43 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Install Tools & Create Project
+      - name: Setup Cordova & Create Project
         run: |
-          npm init -y
-          npm install @capacitor/core @capacitor/cli
-          npx cap init "InteractiveBrokers" "com.personal.interactivebrokers" --web-dir=.
-          npm install @capacitor/ios
-          npx cap add ios
-
-      - name: Inject Custom Icon
+          npm install -g cordova
+          cordova create myapp com.personal.interactivebrokers "InteractiveBrokers"
+          
+      - name: Copy Static Files into App
         run: |
-          npm install -g @capacitor/assets
-          mkdir -p assets
+          rm -rf myapp/www/*
+          cp index.html myapp/www/
+          cp styles.css myapp/www/
+          cp script.js myapp/www/
           if [ -f "icon.png" ]; then
-            cp icon.png assets/icon-only.png
-            cp icon.png assets/icon-foreground.png
-            cp icon.png assets/icon-background.png
-            cp icon.png assets/splash.png
-            npx capacitor-assets generate --ios
-          else
-            echo "Warning: icon.png not found. App will use default framework icon."
+            cp icon.png myapp/www/
           fi
 
-      - name: Sync Web Files to iOS Shell
+      - name: Add iOS Platform
         run: |
-          npx cap sync ios
+          cd myapp
+          cordova platform add ios
 
-      - name: Build Unsigned Xcode Archive
+      - name: Inject Custom Icon Config
         run: |
-          cd ios/App
-          xcodebuild -workspace App.xcworkspace \
-                     -scheme App \
-                     -configuration Release \
-                     -destination 'generic/platform=iOS' \
-                     clean archive \
-                     -archivePath unsigned.xcarchive \
-                     CODE_SIGN_IDENTITY="" \
-                     CODE_SIGNING_REQUIRED=NO \
-                     CODE_SIGNING_ALLOWED=NO
+          cd myapp
+          if [ -f "www/icon.png" ]; then
+            echo '<widget id="com.personal.interactivebrokers" version="1.0.0" xmlns="http://w3.org" xmlns:cdv="http://apache.org">' >> config.xml
+            echo '  <name>InteractiveBrokers</name>' >> config.xml
+            echo '  <icon src="www/icon.png" />' >> config.xml
+            echo '</widget>' >> config.xml
+          fi
 
-      - name: Package Archive into IPA
+      - name: Compile and Package App Bundle
         run: |
+          cd myapp/platforms/ios
           mkdir -p Payload
-          cp -R ios/App/unsigned.xcarchive/Products/Applications/App.app Payload/
-          zip -r InteractiveBrokers.ipa Payload
+          xcodebuild -project InteractiveBrokers.xcodeproj -scheme InteractiveBrokers -configuration Debug -sdk iphoneos CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO clean build
+          mv build/Debug-iphoneos/InteractiveBrokers.app Payload/
+          zip -r ../../InteractiveBrokers.ipa Payload
 
       - name: Upload Finished App File
         uses: actions/upload-artifact@v4
