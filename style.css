@@ -56,10 +56,62 @@
 
 /* --- BASE --- */
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-body { background-color: var(--bg-page); color: var(--text-primary); transition: background-color 0.3s ease; overscroll-behavior-y: none; }
+html {
+    background-color: var(--bg-page);
+    /* Fill notch / status-bar region with theme bg (no black bar) */
+    min-height: 100%;
+    min-height: 100dvh;
+}
+body {
+    background-color: var(--bg-page);
+    color: var(--text-primary);
+    transition: background-color 0.3s ease, opacity 0.45s ease;
+    overscroll-behavior-y: contain;
+    /* Keep content clear of home indicator */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+body.p2r-pulling {
+    overscroll-behavior-y: none;
+}
+body.page-refresh-out {
+    opacity: 0;
+    transition: opacity 0.45s ease;
+}
 
 /* Pull to Refresh Indicator */
-#p2r-indicator { position: fixed; top: 0; left: 0; width: 100%; height: 60px; display: flex; align-items: center; justify-content: center; gap: 10px; background: var(--bg-header); color: var(--text-primary); font-weight: 600; font-size: 14px; z-index: 100; transform: translateY(-100%); transition: transform 0.2s ease-out; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+/* Pull-to-refresh — sits in safe-area, theme-colored, no hard reload until release */
+#p2r-indicator {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: calc(52px + env(safe-area-inset-top, 0px));
+    padding-top: env(safe-area-inset-top, 0px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: var(--bg-header);
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.2px;
+    z-index: 120;
+    transform: translateY(-100%);
+    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), color 0.2s, background 0.2s;
+    box-shadow: none;
+    pointer-events: none;
+}
+#p2r-indicator i { font-size: 14px; transition: transform 0.25s ease; }
+#p2r-indicator.armed {
+    color: var(--accent-blue);
+}
+#p2r-indicator.armed i { transform: rotate(180deg); }
+#p2r-indicator.refreshing {
+    color: var(--accent-blue);
+    background: var(--bg-header);
+}
+#p2r-indicator.refreshing i { transform: none; }
 
 /* --- LOGIN SCREEN --- */
 .login-overlay {
@@ -267,7 +319,7 @@ body { background-color: var(--bg-page); color: var(--text-primary); transition:
 /* --- LAYOUT --- */
 .app-layout { display: flex; min-height: 100vh; position: relative; z-index: 1; background: var(--bg-page); }
 .sidebar { display: none; width: 260px; background-color: var(--bg-sidebar); border-right: 1px solid var(--nav-border); flex-direction: column; position: sticky; top: 0; height: 100vh; }
-.main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; padding-bottom: 70px; }
+.main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)); }
 
 /* --- SIDEBAR --- */
 .sidebar-header { padding: 24px; border-bottom: 1px solid var(--nav-border); }
@@ -282,7 +334,19 @@ body { background-color: var(--bg-page); color: var(--text-primary); transition:
 .desktop-only { display: none; }
 
 /* --- HEADER --- */
-.top-header { background-color: var(--bg-header); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--nav-border); position: sticky; top: 0; z-index: 50; }
+.top-header {
+    background-color: var(--bg-header);
+    /* Push content below iOS/Android status bar; gap itself is theme bg (html/body) */
+    padding: 12px 20px;
+    padding-top: calc(12px + env(safe-area-inset-top, 0px));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--nav-border);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
 .mobile-logo-container { display: flex; align-items: center; gap: 16px; width: 100%; }
 .desktop-search { display: none; align-items: center; background-color: var(--input-bg); border-radius: 20px; padding: 8px 16px; width: 300px; gap: 10px; }
 .desktop-search input { background: none; border: none; outline: none; width: 100%; color: var(--text-primary); }
@@ -403,11 +467,24 @@ body { background-color: var(--bg-page); color: var(--text-primary); transition:
 .complex-chart-container { position: relative; height: 280px; width: 100%; }
 
 /* --- UNIVERSAL TRADE BUTTON --- */
-.universal-trade-btn { position: fixed; bottom: 85px; right: 20px; background-color: var(--accent-blue); color: #fff; border: none; border-radius: 28px; padding: 14px 24px; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px; box-shadow: 0 6px 20px rgba(0, 102, 204, 0.4); cursor: pointer; z-index: 20; transition: transform 0.2s, background 0.2s; }
+.universal-trade-btn { position: fixed; bottom: calc(85px + env(safe-area-inset-bottom, 0px)); right: 20px; background-color: var(--accent-blue); color: #fff; border: none; border-radius: 28px; padding: 14px 24px; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px; box-shadow: 0 6px 20px rgba(0, 102, 204, 0.4); cursor: pointer; z-index: 20; transition: transform 0.2s, background 0.2s; }
 .universal-trade-btn:hover { background-color: var(--accent-blue-hover); transform: scale(1.05); }
 
 /* --- BOTTOM NAV --- */
-.bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background-color: var(--bg-header); border-top: 1px solid var(--nav-border); display: flex; justify-content: space-around; align-items: center; z-index: 10; }
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: calc(70px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background-color: var(--bg-header);
+    border-top: 1px solid var(--nav-border);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 10;
+}
 .nav-item { background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-muted); font-size: 11px; cursor: pointer; width: 25%; }
 .nav-item i { font-size: 18px; }
 .nav-item.active { color: var(--accent-blue); }
@@ -2541,4 +2618,18 @@ body {
     max-height: 360px;
     mask-image: linear-gradient(to bottom, #000 94%, transparent 100%);
     -webkit-mask-image: linear-gradient(to bottom, #000 94%, transparent 100%);
+}
+
+/* Force weekends empty — no trade sessions on Sat/Sun */
+.cal-day.weekend.has-data {
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    opacity: 0.38 !important;
+    pointer-events: none;
+}
+.cal-day.weekend.has-data .cal-day-pnl,
+.cal-day.weekend.has-data .cal-day-meta,
+.cal-day.weekend.has-data .cal-day-wl {
+    display: none !important;
 }
