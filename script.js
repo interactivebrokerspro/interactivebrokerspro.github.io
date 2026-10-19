@@ -11,8 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginBackBtn = document.getElementById('login-back-btn');
     const pwdToggle = document.getElementById('pwd-toggle');
     
-    // Session timeout duration: 4 hours (in milliseconds)
-    const SESSION_TIMEOUT_MS = 4 * 60 * 60 * 1000;
+// Session timeout duration: 10 minutes (in milliseconds)
+const SESSION_TIMEOUT_MS = 10 * 60 * 1000;
 
     function checkAuthSession() {
         const authTimestamp = localStorage.getItem('ib_auth_timestamp');
