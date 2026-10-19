@@ -5,6 +5,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('login-form');
     const passwordInput = document.getElementById('password-input');
     const loginError = document.getElementById('login-error');
+    const loginSlider = document.querySelector('.login-slider');
+    const btnHaveAccount = document.getElementById('btn-have-account');
+    const btnSignupStatic = document.getElementById('btn-signup-static');
+    const loginBackBtn = document.getElementById('login-back-btn');
+    const pwdToggle = document.getElementById('pwd-toggle');
     
     // Session timeout duration: 4 hours (in milliseconds)
     const SESSION_TIMEOUT_MS = 4 * 60 * 60 * 1000;
@@ -19,16 +24,58 @@ document.addEventListener('DOMContentLoaded', () => {
                 return true;
             }
         }
-        // Session expired or missing -> show login overlay
+        // Session expired or missing -> show login overlay (start on welcome)
         loginScreen.classList.remove('hidden');
+        if (loginSlider) loginSlider.classList.remove('show-login');
         return false;
+    }
+
+    // Two-step: Welcome → Login (slide left)
+    if (btnHaveAccount && loginSlider) {
+        btnHaveAccount.addEventListener('click', () => {
+            loginSlider.classList.add('show-login');
+            // focus username after slide settles
+            setTimeout(() => {
+                const u = document.getElementById('username-input');
+                if (u) u.focus();
+            }, 420);
+        });
+    }
+
+    // Back from login form → welcome
+    if (loginBackBtn && loginSlider) {
+        loginBackBtn.addEventListener('click', () => {
+            loginSlider.classList.remove('show-login');
+            if (loginError) loginError.classList.add('hidden');
+            if (passwordInput) passwordInput.value = '';
+        });
+    }
+
+    // Sign Up is static (no navigation) — subtle press feedback only
+    if (btnSignupStatic) {
+        btnSignupStatic.addEventListener('click', (e) => {
+            e.preventDefault();
+            // intentionally no-op; visual feedback handled by CSS :active
+        });
+    }
+
+    // Password visibility toggle
+    if (pwdToggle && passwordInput) {
+        pwdToggle.addEventListener('click', () => {
+            const isPwd = passwordInput.type === 'password';
+            passwordInput.type = isPwd ? 'text' : 'password';
+            const icon = pwdToggle.querySelector('i');
+            if (icon) {
+                icon.className = isPwd ? 'fa-regular fa-eye' : 'fa-regular fa-eye-slash';
+            }
+        });
     }
 
     loginForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const enteredPassword = passwordInput.value.trim();
         // Username field is cosmetic / paper alias — password still gates access
-        if (enteredPassword === 'nabil') {
+        if (enteredPassword === 'nabil123') {
             loginError.classList.add('hidden');
             const btn = document.getElementById('login-btn');
             const spin = document.getElementById('auth-spinner');
@@ -51,6 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (u) u.blur();
                 if (btn) btn.classList.remove('hidden');
                 if (spin) spin.classList.add('hidden');
+                if (loginSlider) loginSlider.classList.remove('show-login');
                 if (portfolioChart) portfolioChart.resize();
             }, 2400);
         } else {
