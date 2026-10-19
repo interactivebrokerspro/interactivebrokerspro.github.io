@@ -79,8 +79,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (icon) {
             icon.className = savedTheme === 'dark' ? 'fa-regular fa-sun' : 'fa-regular fa-moon';
         }
+        syncThemeColorMeta(savedTheme);
+    } else {
+        syncThemeColorMeta(document.documentElement.getAttribute('data-theme') || 'light');
     }
     
+
+    function syncThemeColorMeta(theme) {
+        const meta = document.getElementById('meta-theme-color') || document.querySelector('meta[name="theme-color"]');
+        if (!meta) return;
+        // Match CSS --bg-page so status-bar / system chrome blends with app
+        meta.setAttribute('content', theme === 'dark' ? '#0b0e11' : '#f0f2f5');
+    }
+
     // --- STATE MANAGEMENT ---
     const basePrincipal = 18500.0; 
     
@@ -185,7 +196,6 @@ document.addEventListener('DOMContentLoaded', () => {
         '2026-10-07': { pnl: 1225.9, trades: 2 },
         '2026-10-08': { pnl: -831.84, trades: 2 },
         '2026-10-09': { pnl: 2380.93, trades: 3 },
-        '2026-10-10': { pnl: 612.40, trades: 2 },
         '2026-10-13': { pnl: -677.5, trades: 2 },
         '2026-10-14': { pnl: -1041.0, trades: 1 },
         '2026-10-15': { pnl: -739.0, trades: 2 },
@@ -315,7 +325,6 @@ document.addEventListener('DOMContentLoaded', () => {
         '2026-10-07': { instruments: 'MES + equity', notes: 'Opening-range breakout held through first hour; scaled out into VWAP.', tags: ['ORB'], r: 1.44, vol: 160 },
         '2026-10-08': { instruments: 'MNQ scalp', notes: 'News whipsaw; no revenge size.', tags: ['FOMC'], r: -0.98, vol: 160 },
         '2026-10-09': { instruments: 'SPY', notes: 'Mean-reversion fade into prior day high worked cleanly.', tags: ['Gap'], r: 2.8, vol: 240 },
-        '2026-10-10': { instruments: 'MU', notes: 'Two-leg structure: morning probe + afternoon add.', tags: ['Gap'], r: 0.72, vol: 160 },
         '2026-10-13': { instruments: 'NVDA', notes: 'Stopped during volatility spike; rule-based exit honored.', tags: ['Chop'], r: -0.8, vol: 160 },
         '2026-10-14': { instruments: 'MNQ', notes: 'False breakout; flattened at max session risk.', tags: ['FOMC'], r: -1.22, vol: 100 },
         '2026-10-15': { instruments: 'QQQ', notes: 'News whipsaw; no revenge size.', tags: ['Chop'], r: -0.87, vol: 160 },
@@ -446,7 +455,6 @@ document.addEventListener('DOMContentLoaded', () => {
         '2026-10-07': 67490.78,
         '2026-10-08': 66273.29,
         '2026-10-09': 69758.04,
-        '2026-10-10': 70654.35,
         '2026-10-13': 69662.76,
         '2026-10-14': 68139.14,
         '2026-10-15': 67057.54,
@@ -835,6 +843,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.documentElement.setAttribute('data-theme', newTheme);
         
         localStorage.setItem('theme', newTheme);
+        syncThemeColorMeta(newTheme);
         
         darkToggle.querySelector('i').className = newTheme === 'dark' ? 'fa-regular fa-sun' : 'fa-regular fa-moon';
         portfolioChart.update();
@@ -900,39 +909,92 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // --- MOBILE PULL TO REFRESH ---
+    // --- MOBILE PULL TO REFRESH (hold until release + fade refresh) ---
     let startY = 0;
     let isPulling = false;
+    let pullDistance = 0;
+    let refreshArmed = false;
     const p2rIndicator = document.getElementById('p2r-indicator');
-    
+    const PULL_THRESHOLD = 72;
+
+    function resetP2R() {
+        pullDistance = 0;
+        refreshArmed = false;
+        isPulling = false;
+        if (p2rIndicator) {
+            p2rIndicator.classList.remove('armed', 'refreshing');
+            p2rIndicator.style.transform = 'translateY(-100%)';
+            p2rIndicator.innerHTML = '<i class="fa-solid fa-arrow-down"></i> <span>Pull to refresh</span>';
+        }
+        document.body.classList.remove('p2r-pulling');
+    }
+
+    function triggerSoftRefresh() {
+        if (!p2rIndicator) return;
+        p2rIndicator.classList.add('refreshing');
+        p2rIndicator.classList.remove('armed');
+        p2rIndicator.style.transform = 'translateY(0)';
+        p2rIndicator.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Refreshing…</span>';
+
+        // Beautiful full-page fade, then reload only after release animation settles
+        document.body.classList.add('page-refresh-out');
+        setTimeout(() => {
+            location.reload();
+        }, 520);
+    }
+
     document.addEventListener('touchstart', (e) => {
-        if (window.scrollY <= 0 && e.touches[0].clientY < 120) {
+        if (window.scrollY <= 0 && e.touches[0].clientY < 140) {
             startY = e.touches[0].clientY;
             isPulling = true;
+            pullDistance = 0;
+            refreshArmed = false;
+            if (p2rIndicator) {
+                p2rIndicator.innerHTML = '<i class="fa-solid fa-arrow-down"></i> <span>Pull to refresh</span>';
+                p2rIndicator.classList.remove('armed', 'refreshing');
+            }
         }
-    }, {passive: true});
-    
+    }, { passive: true });
+
     document.addEventListener('touchmove', (e) => {
         if (!isPulling) return;
         const currentY = e.touches[0].clientY;
-        const pullDistance = currentY - startY;
-        
-        if (pullDistance > 10) {
-             p2rIndicator.style.transform = `translateY(${Math.min(pullDistance - 60, 10)}px)`;
+        pullDistance = Math.max(0, currentY - startY);
+        if (pullDistance <= 8) return;
+
+        document.body.classList.add('p2r-pulling');
+        // Rubber-band: indicator follows finger, max ~56px visible
+        const visible = Math.min(pullDistance * 0.55, 56);
+        if (p2rIndicator) {
+            p2rIndicator.style.transform = `translateY(calc(-100% + ${visible + 8}px))`;
+            if (pullDistance >= PULL_THRESHOLD) {
+                if (!refreshArmed) {
+                    refreshArmed = true;
+                    p2rIndicator.classList.add('armed');
+                    p2rIndicator.innerHTML = '<i class="fa-solid fa-arrow-rotate-right"></i> <span>Release to refresh</span>';
+                }
+            } else {
+                refreshArmed = false;
+                p2rIndicator.classList.remove('armed');
+                p2rIndicator.innerHTML = '<i class="fa-solid fa-arrow-down"></i> <span>Pull to refresh</span>';
+            }
         }
-    }, {passive: true});
-    
+    }, { passive: true });
+
     document.addEventListener('touchend', () => {
         if (!isPulling) return;
-        
-        if (p2rIndicator.style.transform.includes('10px') || p2rIndicator.style.transform.includes('translateY(0px)')) {
-            p2rIndicator.innerHTML = '<i class="fa-solid fa-arrow-rotate-right fa-spin"></i> Reloading...';
-            setTimeout(() => { location.reload(); }, 500);
+        if (refreshArmed && pullDistance >= PULL_THRESHOLD) {
+            // Only reload AFTER user lets go
+            triggerSoftRefresh();
         } else {
-            p2rIndicator.style.transform = `translateY(-100%)`;
+            resetP2R();
         }
         isPulling = false;
-    });
+    }, { passive: true });
+
+    document.addEventListener('touchcancel', () => {
+        resetP2R();
+    }, { passive: true });
 
 
     // =====================================================
@@ -1241,7 +1303,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Always mark Sat/Sun so they never pick up weekday empty/future box shade
             if (isWeekend) el.classList.add('weekend');
 
-            if (isWeekend && (!data || !data.trades)) {
+            // Weekends never show trades / PnL (markets closed)
+            if (isWeekend) {
                 if (isFuture || isBefore) el.classList.add('future');
                 el.innerHTML = '<span class="cal-day-num">' + d + '</span>';
             } else if (isFuture || isBefore) {
