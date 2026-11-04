@@ -119,25 +119,29 @@ const SESSION_TIMEOUT_MS = 10 * 60 * 1000;
     // Run auth check on initial load
     checkAuthSession();
 
-    // --- DARK MODE PERSISTENCE ---
+    // --- THEME PERSISTENCE (light → dark → black) ---
+    function themeIconClass(theme) {
+        if (theme === 'black') return 'fa-solid fa-circle';
+        if (theme === 'dark') return 'fa-regular fa-sun';
+        return 'fa-regular fa-moon';
+    }
     const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
+    if (savedTheme === 'light' || savedTheme === 'dark' || savedTheme === 'black') {
         document.documentElement.setAttribute('data-theme', savedTheme);
         const icon = document.querySelector('#dark-mode-toggle i');
-        if (icon) {
-            icon.className = savedTheme === 'dark' ? 'fa-regular fa-sun' : 'fa-regular fa-moon';
-        }
+        if (icon) icon.className = themeIconClass(savedTheme);
         syncThemeColorMeta(savedTheme);
     } else {
         syncThemeColorMeta(document.documentElement.getAttribute('data-theme') || 'light');
     }
-    
 
     function syncThemeColorMeta(theme) {
         const meta = document.getElementById('meta-theme-color') || document.querySelector('meta[name="theme-color"]');
         if (!meta) return;
         // Match CSS --bg-page so status-bar / system chrome blends with app
-        meta.setAttribute('content', theme === 'dark' ? '#0b0e11' : '#f0f2f5');
+        if (theme === 'black') meta.setAttribute('content', '#000000');
+        else if (theme === 'dark') meta.setAttribute('content', '#0b0e11');
+        else meta.setAttribute('content', '#f0f2f5');
     }
 
     // --- STATE MANAGEMENT ---
@@ -153,131 +157,133 @@ const SESSION_TIMEOUT_MS = 10 * 60 * 1000;
     const ctx = document.getElementById('portfolioChart').getContext('2d');
 
     const dailyPnL = {
-        '2026-06-05': { pnl: 1630.11, trades: 3 },
-        '2026-06-08': { pnl: 311.18, trades: 1 },
-        '2026-06-09': { pnl: 511.07, trades: 3 },
-        '2026-06-10': { pnl: 1748.98, trades: 2 },
-        '2026-06-11': { pnl: -385.68, trades: 2 },
-        '2026-06-12': { pnl: 612.52, trades: 3 },
-        '2026-06-15': { pnl: -766.26, trades: 3 },
-        '2026-06-16': { pnl: 1145.54, trades: 1 },
-        '2026-06-17': { pnl: 1578.62, trades: 2 },
-        '2026-06-18': { pnl: 818.46, trades: 3 },
-        '2026-06-19': { pnl: -526.4, trades: 2 },
-        '2026-06-22': { pnl: 1748.98, trades: 2 },
-        '2026-06-23': { pnl: -723.33, trades: 3 },
-        '2026-06-24': { pnl: -314.48, trades: 1 },
-        '2026-06-25': { pnl: 371.75, trades: 1 },
-        '2026-06-26': { pnl: 492.14, trades: 3 },
-        '2026-06-29': { pnl: 1113.74, trades: 1 },
-        '2026-06-30': { pnl: 1882.99, trades: 2 },
-        '2026-07-01': { pnl: 443.68, trades: 3 },
-        '2026-07-02': { pnl: 538.32, trades: 1 },
-        '2026-07-03': { pnl: 446.71, trades: 2 },
-        '2026-07-06': { pnl: 1511.24, trades: 1 },
-        '2026-07-07': { pnl: -792.15, trades: 1 },
-        '2026-07-08': { pnl: 1709.61, trades: 3 },
-        '2026-07-09': { pnl: 1350.73, trades: 2 },
-        '2026-07-10': { pnl: 880.55, trades: 3 },
-        '2026-07-13': { pnl: 1560.45, trades: 3 },
-        '2026-07-14': { pnl: -323.33, trades: 3 },
-        '2026-07-15': { pnl: 442.17, trades: 1 },
-        '2026-07-16': { pnl: 1327.26, trades: 2 },
-        '2026-07-17': { pnl: 726.85, trades: 3 },
-        '2026-07-20': { pnl: -627.93, trades: 2 },
-        '2026-07-21': { pnl: 882.82, trades: 3 },
-        '2026-07-22': { pnl: 1901.16, trades: 2 },
-        '2026-07-23': { pnl: 424.75, trades: 3 },
-        '2026-07-24': { pnl: -556.04, trades: 1 },
-        '2026-07-27': { pnl: -380.91, trades: 3 },
-        '2026-07-28': { pnl: 1876.94, trades: 3 },
-        '2026-07-29': { pnl: -558.08, trades: 1 },
-        '2026-07-30': { pnl: 1887.54, trades: 3 },
-        '2026-07-31': { pnl: 533.02, trades: 1 },
-        '2026-08-03': { pnl: 371.0, trades: 3 },
-        '2026-08-04': { pnl: 1125.1, trades: 2 },
-        '2026-08-05': { pnl: 1559.7, trades: 1 },
-        '2026-08-06': { pnl: 1128.89, trades: 1 },
-        '2026-08-07': { pnl: -285.86, trades: 1 },
-        '2026-08-10': { pnl: 829.06, trades: 1 },
-        '2026-08-11': { pnl: 363.42, trades: 3 },
-        '2026-08-12': { pnl: 754.11, trades: 3 },
-        '2026-08-13': { pnl: -1155.69, trades: 2 },
-        '2026-08-14': { pnl: 377.05, trades: 3 },
-        '2026-08-17': { pnl: 1655.1, trades: 3 },
-        '2026-08-18': { pnl: -385.68, trades: 1 },
-        '2026-08-19': { pnl: 601.16, trades: 3 },
-        '2026-08-20': { pnl: 427.02, trades: 1 },
-        '2026-08-21': { pnl: 888.88, trades: 1 },
-        '2026-08-24': { pnl: -318.56, trades: 1 },
-        '2026-08-25': { pnl: 1209.9, trades: 2 },
-        '2026-08-26': { pnl: 1723.99, trades: 1 },
-        '2026-08-27': { pnl: 453.52, trades: 3 },
-        '2026-08-28': { pnl: 1450.67, trades: 3 },
-        '2026-08-31': { pnl: 305.88, trades: 3 },
-        '2026-09-01': { pnl: -658.25, trades: 1 },
-        '2026-09-02': { pnl: 526.21, trades: 3 },
-        '2026-09-03': { pnl: 878.28, trades: 1 },
-        '2026-09-04': { pnl: 1267.44, trades: 1 },
-        '2026-09-07': { pnl: 274.84, trades: 2 },
-        '2026-09-08': { pnl: 432.32, trades: 2 },
-        '2026-09-09': { pnl: 1178.86, trades: 2 },
-        '2026-09-10': { pnl: 426.27, trades: 1 },
-        '2026-09-11': { pnl: 514.09, trades: 1 },
-        '2026-09-14': { pnl: 2386.49, trades: 2 },
-        '2026-09-15': { pnl: -486.88, trades: 1 },
-        '2026-09-16': { pnl: 1496.85, trades: 3 },
-        '2026-09-17': { pnl: -318.22, trades: 3 },
-        '2026-09-18': { pnl: -146.85, trades: 1 },
-        '2026-09-21': { pnl: 272.57, trades: 2 },
-        '2026-09-22': { pnl: 1066.8, trades: 3 },
-        '2026-09-23': { pnl: 2157.08, trades: 2 },
-        '2026-09-24': { pnl: -833.72, trades: 1 },
-        '2026-09-25': { pnl: -144.8, trades: 3 },
-        '2026-09-28': { pnl: 738.21, trades: 1 },
-        '2026-09-29': { pnl: 1727.78, trades: 1 },
-        '2026-09-30': { pnl: -459.62, trades: 2 },
-        '2026-10-01': { pnl: 439.14, trades: 1 },
-        '2026-10-02': { pnl: 1575.6, trades: 1 },
-        '2026-10-05': { pnl: -353.66, trades: 3 },
-        '2026-10-06': { pnl: 14453.23, trades: 3 },
-        '2026-10-07': { pnl: 1225.9, trades: 2 },
-        '2026-10-08': { pnl: -831.84, trades: 2 },
-        '2026-10-09': { pnl: 2380.93, trades: 3 },
-        '2026-10-13': { pnl: -677.5, trades: 2 },
-        '2026-10-14': { pnl: -1041.0, trades: 1 },
-        '2026-10-15': { pnl: -739.0, trades: 2 },
-        '2026-10-16': { pnl: 1241, trades: 1 },
-        '2026-10-20': { pnl: 805, trades: 2 },
-        '2026-10-21': { pnl: 1401, trades: 2 },
-        '2026-10-22': { pnl: 1389, trades: 2 },
-        '2026-10-23': { pnl: 712, trades: 2 },
-        '2026-10-27': { pnl: 1599, trades: 1 },
-        '2026-10-28': { pnl: 711, trades: 3 },
-        '2026-10-29': { pnl: -282.5, trades: 2 },
-        '2026-10-30': { pnl: 791, trades: 3 },
-        '2026-11-02': { pnl: 386, trades: 2 },
-        '2026-11-03': { pnl: 1514, trades: 1 },
-        '2026-11-04': { pnl: 1824, trades: 1 },
-        '2026-11-05': { pnl: -738.0, trades: 3 },
-        '2026-11-06': { pnl: 881, trades: 2 },
-        '2026-11-09': { pnl: -480.0, trades: 1 },
-        '2026-11-10': { pnl: -279.0, trades: 2 },
-        '2026-11-11': { pnl: 923, trades: 3 },
-        '2026-11-12': { pnl: 2214, trades: 1 },
-        '2026-11-13': { pnl: 1327, trades: 2 },
-        '2026-11-16': { pnl: 480, trades: 2 },
-        '2026-11-17': { pnl: 2757, trades: 1 },
-        '2026-11-18': { pnl: 1433, trades: 1 },
-        '2026-11-19': { pnl: 1247, trades: 2 },
-        '2026-11-20': { pnl: 990, trades: 2 },
-        '2026-11-23': { pnl: 598, trades: 1 },
-        '2026-11-24': { pnl: 1028, trades: 2 },
-        '2026-11-25': { pnl: -586.5, trades: 2 },
-        '2026-11-26': { pnl: 1015, trades: 2 },
-        '2026-11-27': { pnl: 1314, trades: 1 },
-        '2026-11-30': { pnl: 1103, trades: 1 }
-    };
+    '2026-06-05': { pnl: 1630.11, trades: 5 },
+    '2026-06-08': { pnl: 311.18, trades: 3 },
+    '2026-06-09': { pnl: 511.07, trades: 6 },
+    '2026-06-10': { pnl: 1748.98, trades: 4 },
+    '2026-06-11': { pnl: -385.68, trades: 5 },
+    '2026-06-12': { pnl: 612.52, trades: 7 },
+    '2026-06-15': { pnl: -766.26, trades: 4 },
+    '2026-06-16': { pnl: 1145.54, trades: 3 },
+    '2026-06-17': { pnl: 1578.62, trades: 6 },
+    '2026-06-18': { pnl: 818.46, trades: 8 },
+    '2026-06-19': { pnl: -526.40, trades: 4 },
+    '2026-06-22': { pnl: 1748.98, trades: 5 },
+    '2026-06-23': { pnl: -723.33, trades: 6 },
+    '2026-06-24': { pnl: -314.48, trades: 3 },
+    '2026-06-25': { pnl: 371.75, trades: 4 },
+    '2026-06-26': { pnl: 492.14, trades: 7 },
+    '2026-06-29': { pnl: 1113.74, trades: 3 },
+    '2026-06-30': { pnl: 1882.99, trades: 5 },
+    '2026-07-01': { pnl: 443.68, trades: 8 },
+    '2026-07-02': { pnl: 538.32, trades: 4 },
+    '2026-07-03': { pnl: 446.71, trades: 5 },
+    '2026-07-06': { pnl: 1511.24, trades: 3 },
+    '2026-07-07': { pnl: -792.15, trades: 4 },
+    '2026-07-08': { pnl: 1709.61, trades: 7 },
+    '2026-07-09': { pnl: 1350.73, trades: 6 },
+    '2026-07-10': { pnl: 880.55, trades: 9 },
+    '2026-07-13': { pnl: 1560.45, trades: 8 },
+    '2026-07-14': { pnl: -323.33, trades: 5 },
+    '2026-07-15': { pnl: 442.17, trades: 3 },
+    '2026-07-16': { pnl: 1327.26, trades: 6 },
+    '2026-07-17': { pnl: 726.85, trades: 7 },
+    '2026-07-20': { pnl: -627.93, trades: 4 },
+    '2026-07-21': { pnl: 882.82, trades: 8 },
+    '2026-07-22': { pnl: 1901.16, trades: 5 },
+    '2026-07-23': { pnl: 424.75, trades: 6 },
+    '2026-07-24': { pnl: -556.04, trades: 3 },
+    '2026-07-27': { pnl: -380.91, trades: 7 },
+    '2026-07-28': { pnl: 1876.94, trades: 9 },
+    '2026-07-29': { pnl: -558.08, trades: 4 },
+    '2026-07-30': { pnl: 1887.54, trades: 8 },
+    '2026-07-31': { pnl: 533.02, trades: 3 },
+    '2026-08-03': { pnl: 371.47, trades: 6 },
+    '2026-08-04': { pnl: 1125.10, trades: 5 },
+    '2026-08-05': { pnl: 1559.70, trades: 4 },
+    '2026-08-06': { pnl: 1128.89, trades: 3 },
+    '2026-08-07': { pnl: -285.86, trades: 4 },
+    '2026-08-10': { pnl: 829.06, trades: 3 },
+    '2026-08-11': { pnl: 363.42, trades: 7 },
+    '2026-08-12': { pnl: 754.11, trades: 8 },
+    '2026-08-13': { pnl: -1155.69, trades: 5 },
+    '2026-08-14': { pnl: 377.05, trades: 6 },
+    '2026-08-17': { pnl: 1655.10, trades: 9 },
+    '2026-08-18': { pnl: -385.68, trades: 3 },
+    '2026-08-19': { pnl: 601.16, trades: 7 },
+    '2026-08-20': { pnl: 427.02, trades: 4 },
+    '2026-08-21': { pnl: 888.88, trades: 3 },
+    '2026-08-24': { pnl: -318.56, trades: 4 },
+    '2026-08-25': { pnl: 1209.90, trades: 6 },
+    '2026-08-26': { pnl: 1723.99, trades: 4 },
+    '2026-08-27': { pnl: 453.52, trades: 8 },
+    '2026-08-28': { pnl: 1450.67, trades: 7 },
+    '2026-08-31': { pnl: 305.88, trades: 5 },
+    '2026-09-01': { pnl: -658.25, trades: 3 },
+    '2026-09-02': { pnl: 526.21, trades: 6 },
+    '2026-09-03': { pnl: 878.28, trades: 4 },
+    '2026-09-04': { pnl: 1267.44, trades: 5 },
+    '2026-09-07': { pnl: 274.84, trades: 4 },
+    '2026-09-08': { pnl: 432.32, trades: 5 },
+    '2026-09-09': { pnl: 1178.86, trades: 6 },
+    '2026-09-10': { pnl: 426.27, trades: 3 },
+    '2026-09-11': { pnl: 514.09, trades: 4 },
+    '2026-09-14': { pnl: 2386.49, trades: 7 },
+    '2026-09-15': { pnl: -486.88, trades: 3 },
+    '2026-09-16': { pnl: 1496.85, trades: 8 },
+    '2026-09-17': { pnl: -318.22, trades: 6 },
+    '2026-09-18': { pnl: -146.85, trades: 4 },
+    '2026-09-21': { pnl: 272.57, trades: 5 },
+    '2026-09-22': { pnl: 1066.80, trades: 7 },
+    '2026-09-23': { pnl: 2157.08, trades: 6 },
+    '2026-09-24': { pnl: -833.72, trades: 3 },
+    '2026-09-25': { pnl: -144.80, trades: 5 },
+    '2026-09-28': { pnl: 738.21, trades: 4 },
+    '2026-09-29': { pnl: 1727.78, trades: 3 },
+    '2026-09-30': { pnl: -459.62, trades: 5 },
+    '2026-10-01': { pnl: 439.14, trades: 4 },
+    '2026-10-02': { pnl: 1575.60, trades: 3 },
+    '2026-10-05': { pnl: -353.66, trades: 6 },
+    '2026-10-06': { pnl: 14453.87, trades: 11 },
+    '2026-10-07': { pnl: 1225.90, trades: 5 },
+    '2026-10-08': { pnl: -831.84, trades: 4 },
+    '2026-10-09': { pnl: 2380.93, trades: 8 },
+    '2026-10-13': { pnl: -677.50, trades: 5 },
+    '2026-10-14': { pnl: -1041.00, trades: 3 },
+    '2026-10-15': { pnl: -739.00, trades: 4 },
+    '2026-10-16': { pnl: 1241.37, trades: 3 },
+    '2026-10-19': { pnl: 2982.74, trades: 7 },
+    '2026-10-20': { pnl: 805.42, trades: 5 },
+    '2026-10-21': { pnl: 1401.18, trades: 6 },
+    '2026-10-22': { pnl: 1389.65, trades: 5 },
+    '2026-10-23': { pnl: 712.47, trades: 4 },
+    '2026-10-26': { pnl: 986.33, trades: 6 },
+    '2026-10-27': { pnl: 1599.28, trades: 4 },
+    '2026-10-28': { pnl: 711.54, trades: 7 },
+    '2026-10-29': { pnl: -282.50, trades: 5 },
+    '2026-10-30': { pnl: 791.19, trades: 6 },
+    '2026-11-02': { pnl: 386.72, trades: 4 },
+    '2026-11-03': { pnl: 1514.36, trades: 3 },
+    '2026-11-04': { pnl: 1824.81, trades: 4 },
+    '2026-11-05': { pnl: -738.00, trades: 6 },
+    '2026-11-06': { pnl: 881.47, trades: 5 },
+    '2026-11-09': { pnl: -480.00, trades: 3 },
+    '2026-11-10': { pnl: -279.00, trades: 4 },
+    '2026-11-11': { pnl: 923.58, trades: 7 },
+    '2026-11-12': { pnl: 2214.29, trades: 4 },
+    '2026-11-13': { pnl: 1327.14, trades: 5 },
+    '2026-11-16': { pnl: 480.63, trades: 4 },
+    '2026-11-17': { pnl: 2757.41, trades: 3 },
+    '2026-11-18': { pnl: 1433.27, trades: 4 },
+    '2026-11-19': { pnl: 1247.85, trades: 5 },
+    '2026-11-20': { pnl: 990.36, trades: 6 },
+    '2026-11-23': { pnl: 598.72, trades: 3 },
+    '2026-11-24': { pnl: 1028.19, trades: 5 },
+    '2026-11-25': { pnl: -586.50, trades: 4 },
+    '2026-11-26': { pnl: 1015.48, trades: 6 },
+    '2026-11-27': { pnl: 1314.63, trades: 4 },
+    '2026-11-30': { pnl: 1103.27, trades: 3 }
+};
 
 
     // Session journal notes (hardcoded through Nov 30) — opened from calendar day tap
@@ -627,11 +633,15 @@ const SESSION_TIMEOUT_MS = 10 * 60 * 1000;
     const fastMA = calculateEMA(currentData, 9);
     const slowMA = calculateEMA(currentData, 21);
 
+    function isDarkTheme() {
+        const t = document.documentElement.getAttribute('data-theme');
+        return t === 'dark' || t === 'black';
+    }
     function getGradient(context) {
         const chart = context.chart;
         const { ctx, chartArea } = chart;
         if (!chartArea) return null;
-        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const isDark = isDarkTheme();
         const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
         gradient.addColorStop(0, isDark ? 'rgba(0, 102, 204, 0.35)' : 'rgba(0, 102, 204, 0.2)');
         gradient.addColorStop(1, 'rgba(0, 102, 204, 0.0)');
@@ -691,7 +701,7 @@ const SESSION_TIMEOUT_MS = 10 * 60 * 1000;
                     labels: {
                         boxWidth: 12,
                         font: { size: 10, family: 'monospace' },
-                        color: () => document.documentElement.getAttribute('data-theme') === 'dark' ? '#9cb0c9' : '#656f7d'
+                        color: () => isDarkTheme() ? '#9cb0c9' : '#656f7d'
                     }
                 },
                 tooltip: {
@@ -711,15 +721,15 @@ const SESSION_TIMEOUT_MS = 10 * 60 * 1000;
                 x: { 
                     display: true,
                     grid: { 
-                        color: () => document.documentElement.getAttribute('data-theme') === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)' 
+                        color: () => isDarkTheme() ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)' 
                     },
                     ticks: { display: false }
                 },
                 y: {
                     position: 'right',
-                    grid: { color: () => document.documentElement.getAttribute('data-theme') === 'dark' ? '#232d3f' : '#f0f3f7' },
+                    grid: { color: () => isDarkTheme() ? '#232d3f' : '#f0f3f7' },
                     ticks: {
-                        color: () => document.documentElement.getAttribute('data-theme') === 'dark' ? '#64748b' : '#8d97a5',
+                        color: () => isDarkTheme() ? '#64748b' : '#8d97a5',
                         font: { size: 11, family: 'monospace' },
                         callback: (val) => '$' + val.toLocaleString()
                     }
@@ -883,21 +893,30 @@ const SESSION_TIMEOUT_MS = 10 * 60 * 1000;
         }, 800);
     }
 
-    // --- DARK MODE TOGGLE ---
+    // --- THEME TOGGLE (cycles light → dark → black → light) ---
     const darkToggle = document.getElementById('dark-mode-toggle');
     darkToggle.addEventListener('click', () => {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+        let newTheme = 'dark';
+        if (currentTheme === 'light') newTheme = 'dark';
+        else if (currentTheme === 'dark') newTheme = 'black';
+        else newTheme = 'light';
+
         document.documentElement.setAttribute('data-theme', newTheme);
-        
         localStorage.setItem('theme', newTheme);
         syncThemeColorMeta(newTheme);
-        
-        darkToggle.querySelector('i').className = newTheme === 'dark' ? 'fa-regular fa-sun' : 'fa-regular fa-moon';
-        portfolioChart.update();
-        complexChart1.update();
-        complexChart2.update();
-        if (typeof equityChart !== "undefined" && equityChart) equityChart.update();
+
+        const icon = darkToggle.querySelector('i');
+        if (icon) icon.className = themeIconClass(newTheme);
+
+        // Refresh charts that use theme-aware colors
+        if (typeof portfolioChart !== 'undefined' && portfolioChart) portfolioChart.update();
+        if (typeof complexChart1 !== 'undefined' && complexChart1) complexChart1.update();
+        if (typeof complexChart2 !== 'undefined' && complexChart2) complexChart2.update();
+        if (typeof equityChart !== 'undefined' && equityChart) equityChart.update();
+        if (typeof tvCharts !== 'undefined') {
+            Object.keys(tvCharts).forEach(k => { if (tvCharts[k]) tvCharts[k].update(); });
+        }
     });
 
     // --- NOTIFICATIONS TOGGLE ---
@@ -1059,7 +1078,7 @@ const SESSION_TIMEOUT_MS = 10 * 60 * 1000;
             data: { labels: eqLabels, datasets: [{ label: 'NLV', data: eqData, borderColor: '#0066cc', borderWidth: 2, pointRadius: 0, tension: 0.1, fill: true,
                 backgroundColor: (context) => {
                     const chart = context.chart; const { ctx, chartArea } = chart; if (!chartArea) return null;
-                    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                    const isDark = isDarkTheme();
                     const g = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
                     g.addColorStop(0, isDark ? 'rgba(0,102,204,0.3)' : 'rgba(0,102,204,0.15)');
                     g.addColorStop(1, 'rgba(0,102,204,0)'); return g;
@@ -1067,8 +1086,8 @@ const SESSION_TIMEOUT_MS = 10 * 60 * 1000;
             options: { responsive: true, maintainAspectRatio: false,
                 plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => 'NLV: $' + c.raw.toLocaleString() } } },
                 scales: { x: { display: false }, y: { position: 'right', ticks: { callback: v => '$' + (v/1000).toFixed(0) + 'k', font: { size: 10, family: 'monospace' },
-                    color: () => document.documentElement.getAttribute('data-theme') === 'dark' ? '#64748b' : '#8d97a5' },
-                    grid: { color: () => document.documentElement.getAttribute('data-theme') === 'dark' ? '#232d3f' : '#f0f3f7' } } } }
+                    color: () => isDarkTheme() ? '#64748b' : '#8d97a5' },
+                    grid: { color: () => isDarkTheme() ? '#232d3f' : '#f0f3f7' } } } }
         });
     }
 
@@ -1254,6 +1273,13 @@ const SESSION_TIMEOUT_MS = 10 * 60 * 1000;
         const num = Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         return sign + '$' + num;
     }
+    // Calendar cells — always show full cents (IBKR is strict to the cent)
+    // e.g. +$1,152.00  /  -$1,211.00
+    function formatPnLCell(v) {
+        const sign = v >= 0 ? '+' : '-';
+        const num = Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return sign + '$' + num;
+    }
     function dateKey(d) {
         return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
     }
@@ -1366,14 +1392,18 @@ const SESSION_TIMEOUT_MS = 10 * 60 * 1000;
                 el.classList.add(win ? 'win' : 'loss', 'has-data');
                 const trades = data.trades || 0;
                 const note = DAY_NOTES[key] || {};
-                const volTag = note.vol != null ? note.vol : (trades <= 1 ? trades * 100 : trades * 80);
-                const w = win ? 1 : 0;
-                const l = win ? 0 : 1;
+                // Simple day score % for the cell (matches reference layout: $ then %)
+                // Prefer note.r mapped to a 0-100 feel, else win=100 / loss=0 style
+                let pct = win ? 100 : 0;
+                if (note.r != null) {
+                    // map R-multiple roughly into a display %
+                    const r = Number(note.r);
+                    if (!isNaN(r)) pct = Math.max(0, Math.min(100, Math.round(50 + r * 25)));
+                }
                 el.innerHTML =
                     '<div class="cal-day-top"><span class="cal-day-num">' + d + '</span></div>' +
-                    '<span class="cal-day-pnl">' + formatPnL(data.pnl) + '</span>' +
-                    '<span class="cal-day-meta">Vol: ' + volTag + ' · Tr: ' + trades + '</span>' +
-                    '<span class="cal-day-wl">W' + w + ' / L' + l + '</span>';
+                    '<span class="cal-day-pnl">' + formatPnLCell(data.pnl) + '</span>' +
+                    '<span class="cal-day-pct">' + pct + '%</span>';
                 el.setAttribute('data-date', key);
                 el.addEventListener('click', () => openDayDetail(key));
             }
@@ -1558,10 +1588,19 @@ const SESSION_TIMEOUT_MS = 10 * 60 * 1000;
                 el.innerHTML = '<span class="cal-day-num">' + d.getDate() + '</span><span class="cal-day-pnl">—</span>';
             } else {
                 weekTotal += data.pnl;
-                el.classList.add(data.pnl >= 0 ? 'win' : 'loss', 'has-data');
-                el.innerHTML = '<span class="cal-day-num">' + d.getDate() + '</span>' +
-                    '<span class="cal-day-pnl">' + formatPnL(data.pnl) + '</span>' +
-                    '<span class="cal-day-trades">' + data.trades + ' trade' + (data.trades > 1 ? 's' : '') + '</span>';
+                const win = data.pnl >= 0;
+                el.classList.add(win ? 'win' : 'loss', 'has-data');
+                const note = DAY_NOTES[key] || {};
+                let pct = win ? 100 : 0;
+                if (note.r != null) {
+                    const r = Number(note.r);
+                    if (!isNaN(r)) pct = Math.max(0, Math.min(100, Math.round(50 + r * 25)));
+                }
+                el.innerHTML = '<div class="cal-day-top"><span class="cal-day-num">' + d.getDate() + '</span></div>' +
+                    '<span class="cal-day-pnl">' + formatPnLCell(data.pnl) + '</span>' +
+                    '<span class="cal-day-pct">' + pct + '%</span>';
+                el.setAttribute('data-date', key);
+                el.addEventListener('click', () => openDayDetail(key));
             }
             // highlight today
             if (dateKey(d) === dateKey(TODAY)) el.style.outline = '2px solid var(--accent-blue)';
